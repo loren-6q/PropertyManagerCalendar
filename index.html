@@ -1,0 +1,555 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { 
+  ChevronLeft, ChevronRight, Plus, Calendar, Trash2, AlertCircle, 
+  Receipt, ArrowRight, User, CheckCircle2, Clock, LogOut, LogIn, DollarSign, 
+  AlertTriangle, Info, ChevronDown, ChevronUp, Phone, Trash, PlusCircle, 
+  History, X, ToggleLeft, ToggleRight, Zap, Droplets, Home, Building2,
+  LayoutGrid, Settings2, LayoutDashboard, Wallet, BellRing, CalendarClock
+} from 'lucide-react';
+
+// --- FIREBASE CONFIG ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'prop-mgr-app';
+
+const TODAY = new Date(2026, 2, 21); // March 21, 2026
+
+// --- UTILS ---
+const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+
+const getMonthYearShort = (date) => {
+  const m = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
+  return `${m.toUpperCase()} ${date.getFullYear()}`;
+};
+
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// Compact format for Vacancy: e.g., 21MAR26
+const formatVacancyDate = (date) => {
+  if (!date) return '∞';
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(d).toUpperCase();
+  const year = d.getFullYear().toString().slice(-2);
+  return `${day}${month}${year}`;
+};
+
+const toISODate = (date) => date.toLocaleDateString('sv-SE');
+
+export default function App() {
+  // --- STATE ---
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('calendar');
+  const [viewDate, setViewDate] = useState(new Date(2026, 2, 1));
+  const [rooms, setRooms] = useState(Array.from({ length: 12 }, (_, i) => ({ id: `r${i}`, name: `${101 + i}` })));
+  const [bookings, setBookings] = useState([]);
+  const [paymentLog, setPaymentLog] = useState({});
+  const [utilityLog, setUtilityLog] = useState({});
+  
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [showLedgerInModal, setShowLedgerInModal] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({ 
+    guestName: '', contact: '', room: '101', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto'
+  });
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const daysInMonth = getDaysInMonth(year, month);
+  const isTodayVisible = TODAY.getFullYear() === year && TODAY.getMonth() === month;
+  const todayDay = TODAY.getDate();
+
+  // --- DATABASE PERSISTENCE ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (e) { console.error("Auth failed", e); }
+    };
+    initAuth();
+    return onAuthStateChanged(auth, setUser);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'appState', 'main'), (snap) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.bookings) setBookings(d.bookings);
+        if (d.paymentLog) setPaymentLog(d.paymentLog);
+        if (d.utilityLog) setUtilityLog(d.utilityLog);
+        if (d.rooms) setRooms(d.rooms);
+      }
+    });
+    return unsub;
+  }, [user]);
+
+  const sync = async (update) => {
+    if (!user) return;
+    try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appState', 'main'), update, { merge: true }); }
+    catch (e) { console.error("Sync failed", e); }
+  };
+
+  // --- ACTIONS ---
+  const updateUtility = (bookingId, m, y, field, value) => {
+    const key = `${bookingId}_${m}_${y}`;
+    const cleanValue = value === '' ? 0 : Number(value);
+    const newUtilLog = {
+      ...utilityLog,
+      [key]: { ...(utilityLog[key] || { elecStart: 0, elecEnd: 0, elecRate: 8, water: 200 }), [field]: cleanValue }
+    };
+    setUtilityLog(newUtilLog);
+    sync({ utilityLog: newUtilLog });
+  };
+
+  const addPayLocal = (bookingId, m, y, amount) => {
+    if (!amount || amount <= 0) return;
+    const key = `${bookingId}_${m}_${y}`;
+    const newEntry = { amount: Math.round(Number(amount)), date: toISODate(new Date()) };
+    const newLog = { ...paymentLog, [key]: [...(paymentLog[key] || []), newEntry] };
+    setPaymentLog(newLog);
+    sync({ paymentLog: newLog });
+  };
+
+  const updatePayment = (bookingId, m, y, index, field, value) => {
+    const key = `${bookingId}_${m}_${y}`;
+    const updatedEntries = [...(paymentLog[key] || [])];
+    updatedEntries[index] = { ...updatedEntries[index], [field]: field === 'amount' ? Math.round(Number(value)) : value };
+    const newLog = { ...paymentLog, [key]: updatedEntries };
+    setPaymentLog(newLog);
+    sync({ paymentLog: newLog });
+  };
+
+  const removePayLocal = (bookingId, m, y, idx) => {
+    const key = `${bookingId}_${m}_${y}`;
+    const entries = [...(paymentLog[key] || [])];
+    entries.splice(idx, 1);
+    const newLog = { ...paymentLog, [key]: entries };
+    setPaymentLog(newLog);
+    sync({ paymentLog: newLog });
+  };
+
+  const handleNumInput = (e) => {
+    const val = e.target.value;
+    if (val.length > 1 && val.startsWith('0')) {
+      e.target.value = val.substring(1);
+    }
+  };
+
+  // --- CALCULATIONS ---
+  const getPaymentSchedule = (booking) => {
+    if (!booking) return [];
+    const start = new Date(booking.start);
+    const end = new Date(booking.end);
+    const schedule = [];
+    let current = new Date(start.getFullYear(), start.getMonth(), 1);
+    let isFirst = true;
+    while (current <= end) {
+      const currY = current.getFullYear();
+      const currM = current.getMonth();
+      const mDays = getDaysInMonth(currY, currM);
+      const sInM = currM === start.getMonth() && currY === start.getFullYear() ? start.getDate() : 1;
+      const eInM = currM === end.getMonth() && currY === end.getFullYear() ? end.getDate() : mDays + 1;
+      const days = Math.max(0, eInM - sInM);
+      if (days > 0) {
+        let rent = booking.isFixedPrice ? (isFirst ? booking.monthlyRate : 0) : Math.round((days >= mDays ? booking.monthlyRate : (booking.monthlyRate / mDays) * days));
+        isFirst = false;
+        const key = `${booking.id}_${currM}_${currY}`;
+        const util = utilityLog[key] || { elecStart: 0, elecEnd: 0, elecRate: 8, water: 200 };
+        let utilOwed = 0;
+        if (util.elecEnd > 0) {
+           const elec = Math.max(0, (util.elecEnd - util.elecStart) * util.elecRate);
+           utilOwed = Math.round(elec + util.water);
+        }
+        const total = rent + utilOwed;
+        const paid = (paymentLog[key] || []).reduce((s, p) => s + p.amount, 0);
+        schedule.push({ monthIndex: currM, year: currY, label: new Intl.DateTimeFormat('en-US', { month: 'short' }).format(current), rent, utilOwed, owed: total, paid, util, payments: paymentLog[key] || [] });
+      }
+      current = new Date(currY, currM + 1, 1);
+    }
+    return schedule;
+  };
+
+  const getStatus = (booking) => {
+    if (booking.manualStatus === 'checked-in') return { label: 'In', Icon: Home, color: 'text-emerald-500' };
+    if (booking.manualStatus === 'checked-out') return { label: 'Out', Icon: CheckCircle2, color: 'text-slate-400' };
+    const s = new Date(booking.start), e = new Date(booking.end);
+    if (TODAY < s) return { label: 'Future', Icon: Clock, color: 'text-blue-500' };
+    if (TODAY >= s && TODAY < e) return { label: 'In', Icon: Home, color: 'text-emerald-500' };
+    return { label: 'Out', Icon: CheckCircle2, color: 'text-slate-400' };
+  };
+
+  const getBarColor = (booking, balance) => {
+    const s = getStatus(booking);
+    if (s.label === 'Out') return 'bg-slate-400';
+    if (s.label === 'Future') return 'bg-blue-600';
+    return balance > 0 ? 'bg-rose-600' : 'bg-emerald-600';
+  };
+
+  // --- HANDLERS ---
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!formData.guestName || !formData.start || !formData.end) return setError('Missing data');
+    const overlap = bookings.find(b => b.id !== editingId && b.room === formData.room && (new Date(formData.start) < new Date(b.end) && new Date(formData.end) > new Date(b.start)));
+    if (overlap) return setError(`Overlap: ${overlap.guestName}`);
+    const newB = editingId ? bookings.map(b => b.id === editingId ? { ...formData, id: editingId } : b) : [...bookings, { ...formData, id: Date.now().toString(), color: 'bg-indigo-600', manualStatus: 'auto' }];
+    setBookings(newB);
+    await sync({ bookings: newB });
+    setShowModal(false);
+  };
+
+  const handleGridClick = (room, dayIndex) => {
+    const selectedDate = new Date(year, month, dayIndex + 1, 12, 0, 0);
+    const dateStr = toISODate(selectedDate);
+    setEditingId(null);
+    setFormData({ guestName: '', contact: '', room: room, start: dateStr, end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto' });
+    setShowModal(true);
+    setError('');
+  };
+
+  // --- TABS LOGIC ---
+  const vacancies = useMemo(() => {
+    const list = [];
+    rooms.forEach(room => {
+      const roomBookings = bookings
+        .filter(b => b.room === room.name)
+        .sort((a, b) => new Date(a.start) - new Date(b.start));
+      
+      let lastCheckOut = new Date(TODAY);
+      roomBookings.forEach(b => {
+        const checkIn = new Date(b.start);
+        if (checkIn > lastCheckOut) {
+          list.push({ room: room.name, from: new Date(lastCheckOut), to: new Date(checkIn) });
+        }
+        const bEnd = new Date(b.end);
+        if (bEnd > lastCheckOut) lastCheckOut = bEnd;
+      });
+      list.push({ room: room.name, from: new Date(lastCheckOut), to: null });
+    });
+    return list.sort((a, b) => a.from - b.from);
+  }, [bookings, rooms]);
+
+  const remindersData = useMemo(() => {
+    const res = { overdue: [], current: [], upcoming: [] };
+    bookings.forEach(b => {
+      const schedule = getPaymentSchedule(b);
+      schedule.forEach(s => {
+        const balance = s.owed - s.paid;
+        if (balance > 0) {
+          if (new Date(s.year, s.monthIndex + 1, 0) < TODAY) res.overdue.push({ guest: b.guestName, room: b.room, amt: balance, type: 'Rent/Utils' });
+          else res.current.push({ guest: b.guestName, room: b.room, amt: balance, type: 'Balance' });
+        }
+      });
+      const start = new Date(b.start), end = new Date(b.end);
+      const diffIn = Math.ceil((start - TODAY) / (1000 * 60 * 60 * 24));
+      const diffOut = Math.ceil((end - TODAY) / (1000 * 60 * 60 * 24));
+      if (diffIn >= 0 && diffIn <= 7) res.upcoming.push({ text: `Check-in: ${b.guestName}`, room: b.room, date: b.start });
+      if (diffOut >= 0 && diffOut <= 7) res.upcoming.push({ text: `Check-out: ${b.guestName}`, room: b.room, date: b.end });
+    });
+    return res;
+  }, [bookings, utilityLog, paymentLog]);
+
+  return (
+    <div className="min-h-screen bg-slate-100 text-slate-900 p-1 font-sans antialiased">
+      <div className="max-w-[1800px] mx-auto">
+        
+        {/* GLOBAL HEADER (Line 1): PROP MGR | TABS ONLY */}
+        <div className="flex flex-wrap justify-between items-center mb-1 gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-300">
+          <div className="flex items-center gap-3 pl-1">
+            <div className="bg-indigo-800 p-1 rounded-xl text-white shadow-sm"><Building2 size={20} /></div>
+            <h1 className="text-[14px] font-black tracking-tighter uppercase mr-3">PROP MGR</h1>
+            
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 gap-0.5">
+              {[
+                { id: 'calendar', label: 'CALENDAR', icon: LayoutGrid },
+                { id: 'reminders', label: 'REMINDERS', icon: BellRing },
+                { id: 'vacancy', label: 'VACANCY', icon: LayoutDashboard },
+                { id: 'bills', label: 'BILLS', icon: Receipt },
+                { id: 'accounting', label: 'ACCOUNTING', icon: Wallet }
+              ].map(t => {
+                const TabIcon = t.icon;
+                return (
+                  <button 
+                    key={t.id} 
+                    onClick={() => setActiveTab(t.id)} 
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase transition-all ${activeTab === t.id ? 'bg-white text-indigo-700 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <TabIcon size={14} /> <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* CONTENT AREA */}
+        {activeTab === 'calendar' ? (
+          <div className="space-y-1 animate-in fade-in duration-300">
+            
+            {/* LOCAL CONTROLS: KEY | MONTH | +NEW (Strictly inside Calendar tab) */}
+            <div className="flex flex-wrap items-center justify-between px-2 py-0.5">
+               <div className="flex items-center gap-2 bg-white/60 border border-slate-300 px-3 py-1.5 rounded-xl">
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><Home size={13} className="text-emerald-500" /> IN</div>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><Clock size={13} className="text-blue-500" /> FUT</div>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase"><CheckCircle2 size={13} className="text-slate-400" /> OUT</div>
+                  <div className="w-px h-3 bg-slate-300 mx-1" />
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> PAID</div>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" /> OWES</div>
+               </div>
+
+               <div className="flex items-center gap-2">
+                 <div className="flex items-center bg-white p-0.5 rounded-xl gap-0.5 border border-slate-300 shadow-sm">
+                    <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="p-0.5 hover:bg-slate-50 rounded transition-all"><ChevronLeft size={18}/></button>
+                    <span className="font-black px-2 min-w-[95px] text-center text-[12px] uppercase">{getMonthYearShort(viewDate)}</span>
+                    <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-0.5 hover:bg-slate-50 rounded transition-all"><ChevronRight size={18}/></button>
+                 </div>
+                 <button onClick={() => { setEditingId(null); setFormData({guestName:'', contact:'', room: (rooms && rooms.length > 0) ? rooms[0].name : '101', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto'}); setShowModal(true); setError(''); }} className="bg-indigo-600 text-white px-4 py-1.5 rounded-xl font-black text-[12px] uppercase shadow-md active:scale-95 transition-all flex items-center gap-1">
+                   <Plus size={16} strokeWidth={3} /> NEW
+                 </button>
+               </div>
+            </div>
+
+            {/* The Grid */}
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-400 overflow-hidden relative">
+              <div className="overflow-x-auto">
+                <div className="min-w-[1000px] relative">
+                  <div className="grid border-b border-slate-400 bg-slate-50" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)` }}>
+                    <div className="p-1 font-black text-slate-400 text-[12px] uppercase border-r border-slate-400 bg-slate-50 sticky left-0 z-40 text-center flex items-center justify-center">Unit</div>
+                    {Array.from({ length: daysInMonth }).map((_, i) => (
+                      <div key={i} className={`py-1 text-center border-r border-slate-300 ${isTodayVisible && (i+1) === todayDay ? 'bg-indigo-50' : ''}`}>
+                        <span className="text-[12px] text-slate-400 font-bold block uppercase opacity-50 leading-none">{new Date(year, month, i+1).toLocaleDateString('en',{weekday:'short'}).charAt(0)}</span>
+                        <span className={`text-[12px] font-black mt-1 ${isTodayVisible && (i+1) === todayDay ? 'text-indigo-600 underline' : 'text-slate-700'}`}>{i+1}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {isTodayVisible && (
+                    <div className="absolute top-0 bottom-0 w-0.5 bg-indigo-500 z-30 pointer-events-none" style={{ left: `calc(85px + ((100% - 85px) / ${daysInMonth}) * ${todayDay - 0.5})` }}>
+                      <div className="bg-indigo-600 text-white text-[12px] font-black px-1.5 py-0.5 rounded absolute top-0.5 left-1/2 -translate-x-1/2 shadow z-50">TODAY</div>
+                    </div>
+                  )}
+                  {rooms.map(r => (
+                    <div key={r.id} className="grid border-b border-slate-400 last:border-0 relative group" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)`, minHeight: '42px' }}>
+                      <div className="p-1 sticky left-0 z-20 bg-white border-r border-slate-400 flex items-center justify-center shadow-[2px_0_5px_rgba(0,0,0,0.05)] overflow-hidden">
+                        <input className="w-full bg-transparent text-center font-black text-[12px] text-slate-600 uppercase focus:bg-slate-100 outline-none rounded" value={r.name} onChange={(e) => { const n = [...rooms]; n.find(x=>x.id===r.id).name = e.target.value; setRooms(n); sync({ rooms: n }); }} />
+                      </div>
+                      {Array.from({ length: daysInMonth }).map((_, i) => (
+                        <div key={i} onClick={() => handleGridClick(r.name, i)} className="border-r border-slate-300 last:border-0 cursor-cell hover:bg-slate-50 transition-colors" />
+                      ))}
+                      {bookings.filter(b => b.room === r.name).map(booking => {
+                        const bS = new Date(booking.start), bE = new Date(booking.end);
+                        const mS = new Date(year, month, 1), mE = new Date(year, month, daysInMonth);
+                        if (bE <= mS || bS > mE) return null;
+                        const dS = Math.max(1, bS.getMonth() === month && bS.getFullYear() === year ? bS.getDate() : 1);
+                        const dE = Math.min(daysInMonth, bE.getMonth() === month && bE.getFullYear() === year ? bE.getDate() : daysInMonth);
+                        const sch = getPaymentSchedule(booking).find(s => s.monthIndex === month && s.year === year);
+                        const bal = sch ? Math.round(sch.owed - sch.paid) : 0;
+                        const color = getBarColor(booking, bal);
+                        const { Icon: StatusIcon } = getStatus(booking);
+                        return (
+                          <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1 border border-white/20 flex items-center px-2 z-10 transition-all hover:scale-[1.01] cursor-pointer shadow-md ${color} ${bS < mS ? 'rounded-l-none' : 'rounded-xl'} ${bE > mE ? 'rounded-r-none' : 'rounded-xl'}`} style={{ gridColumnStart: dS + 1, gridColumnEnd: dE + 2, left: bS < mS ? 0 : '1px', right: bE > mE ? 0 : '1px' }}>
+                            <div className="flex items-center gap-1.5 w-full text-white whitespace-nowrap overflow-hidden font-black text-[13px] tracking-tight uppercase">
+                              <div className={`w-3 h-3 rounded-full border border-white/40 shrink-0 ${bal <= 0 ? 'bg-emerald-400' : 'bg-rose-100 animate-pulse'}`} />
+                              <StatusIcon size={13} className="shrink-0 opacity-90" />
+                              {bS < mS && <span className="text-[10px] opacity-60">← PREV |</span>}
+                              <span className="truncate">{booking.guestName}</span>
+                              <span className="opacity-40">|</span>
+                              <span className={bal > 0 ? "text-rose-100" : "text-emerald-100"}>{bal > 0 ? `${bal}` : "✓"}</span>
+                              {bE > mE && <span className="text-[10px] opacity-60 ml-auto">| NEXT →</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === 'reminders' ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-2 animate-in slide-in-from-bottom duration-300">
+             <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
+                <h3 className="text-rose-600 font-black text-[13px] uppercase flex items-center gap-2 mb-3"><AlertTriangle size={16}/> Overdue Payments</h3>
+                <div className="space-y-2">
+                   {remindersData.overdue.map((r, i) => (
+                     <div key={i} className="bg-rose-50 p-2 rounded-xl border border-rose-100 flex justify-between items-center">
+                        <div><p className="text-[14px] font-black text-rose-900">{r.guest}</p><p className="text-[11px] font-bold text-rose-500 uppercase">Unit {r.room} • {r.type}</p></div>
+                        <div className="text-right text-rose-600 font-black text-[15px]">{r.amt.toLocaleString()} ฿</div>
+                     </div>
+                   ))}
+                   {remindersData.overdue.length === 0 && <p className="text-slate-400 text-[12px] font-bold uppercase italic">No overdue items</p>}
+                </div>
+             </div>
+             <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
+                <h3 className="text-indigo-600 font-black text-[13px] uppercase flex items-center gap-2 mb-3"><Wallet size={16}/> Current Balances</h3>
+                <div className="space-y-2">
+                   {remindersData.current.map((r, i) => (
+                     <div key={i} className="bg-slate-50 p-2 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div><p className="text-[14px] font-black text-slate-800">{r.guest}</p><p className="text-[11px] font-bold text-slate-400 uppercase">Unit {r.room}</p></div>
+                        <div className="text-right text-indigo-600 font-black text-[15px]">{r.amt.toLocaleString()} ฿</div>
+                     </div>
+                   ))}
+                   {remindersData.current.length === 0 && <p className="text-slate-400 text-[12px] font-bold uppercase italic">Everyone paid up</p>}
+                </div>
+             </div>
+             <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
+                <h3 className="text-emerald-600 font-black text-[13px] uppercase flex items-center gap-2 mb-3"><CalendarClock size={16}/> Logistics (7 Days)</h3>
+                <div className="space-y-2">
+                   {remindersData.upcoming.map((r, i) => (
+                     <div key={i} className="bg-emerald-50 p-2 rounded-xl border border-emerald-100">
+                        <p className="text-[14px] font-black text-emerald-900">{r.text}</p>
+                        <p className="text-[11px] font-bold text-emerald-500 uppercase">Unit {r.room} • {r.date}</p>
+                     </div>
+                   ))}
+                   {remindersData.upcoming.length === 0 && <p className="text-slate-400 text-[12px] font-bold uppercase italic">Quiet week ahead</p>}
+                </div>
+             </div>
+          </div>
+        ) : activeTab === 'vacancy' ? (
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-300 max-w-xl mx-auto shadow-xl animate-in zoom-in duration-300">
+             <h2 className="text-[14px] font-black uppercase mb-4 text-indigo-700 flex items-center gap-2"><LayoutDashboard size={18}/> Vacancy Report</h2>
+             <div className="space-y-2">
+                {vacancies.map((v, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200 group hover:bg-white transition-all shadow-sm">
+                    <div className="flex items-center gap-1 font-black text-[15px] text-slate-800 tracking-tight">
+                       <span className="text-indigo-600 w-10 text-center">{v.room}:</span>
+                       <span className="ml-2">{formatVacancyDate(v.from)}</span>
+                       <span className="mx-2 text-slate-300">→</span>
+                       <span className={v.to ? "text-slate-800" : "text-emerald-600"}>{formatVacancyDate(v.to)}</span>
+                    </div>
+                    <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border ${v.to ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                       {v.to ? 'Window' : 'Open'}
+                    </div>
+                  </div>
+                ))}
+                {vacancies.length === 0 && <p className="text-center text-slate-400 py-10 font-bold uppercase italic">All rooms occupied</p>}
+             </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2rem] p-10 text-center border-2 border-dashed border-slate-300 min-h-[400px] flex flex-col items-center justify-center">
+             <div className="bg-slate-50 p-6 rounded-full mb-4 text-slate-300"><History size={48}/></div>
+             <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">{activeTab.toUpperCase()} Section</h2>
+             <p className="text-slate-400 text-[12px] mt-2 font-bold uppercase tracking-widest">Persistence active. Data is synced to cloud.</p>
+          </div>
+        )}
+
+        {/* Management Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 overflow-y-auto">
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in duration-200 my-auto border border-slate-300">
+              <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-2 pl-2">
+                  <div className={`p-1.5 rounded-xl text-white shadow-sm ${editingId ? 'bg-indigo-600' : 'bg-slate-900'}`}><User size={16} /></div>
+                  <h2 className="text-[12px] font-black uppercase tracking-widest">{editingId ? 'Profile' : 'New Stay'}</h2>
+                </div>
+                <button type="button" onClick={() => { setShowModal(false); setShowLedgerInModal(false); setError(''); }} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-all"><X size={24}/></button>
+              </div>
+              <div className="p-3 space-y-2">
+                {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 p-2 rounded-xl text-[12px] font-black uppercase flex items-center gap-1 shadow-sm"><AlertTriangle size={16}/> {error}</div>}
+                <form onSubmit={handleSave} className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Name" value={formData.guestName} onChange={e=>setFormData({...formData, guestName:e.target.value})} />
+                    <input type="text" className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[13px] font-bold outline-none" placeholder="Contact" value={formData.contact} onChange={e=>setFormData({...formData, contact:e.target.value})} />
+                  </div>
+                  <div className="flex items-center gap-2 bg-slate-50 p-1.5 border border-slate-200 rounded-xl shadow-inner">
+                    <span className="text-[12px] font-black text-slate-400 uppercase ml-1">Status:</span>
+                    <div className="flex bg-white rounded-lg p-0.5 border border-slate-200 flex-1">
+                      {['auto', 'checked-in', 'checked-out'].map(s => (
+                        <button key={s} type="button" onClick={() => setFormData({...formData, manualStatus: s})} className={`flex-1 py-1 rounded text-[11px] font-black uppercase transition-all ${formData.manualStatus === s ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400'}`}>{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 bg-slate-50 p-2 border border-slate-200 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2 text-[14px] font-black pl-1">
+                      <span className="text-slate-400 uppercase">Unit:</span>
+                      <select className="bg-transparent text-indigo-600 font-black outline-none appearance-none cursor-pointer" value={formData.room} onChange={e=>setFormData({...formData, room:e.target.value})}>
+                        {rooms.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 text-[13px] font-black">
+                      <span className="text-slate-400 uppercase">Fixed?</span>
+                      <button type="button" onClick={() => setFormData({...formData, isFixedPrice: !formData.isFixedPrice})} className={`p-0.5 rounded-full transition-all ${formData.isFixedPrice ? 'bg-indigo-600 text-white' : 'bg-slate-200'}`}>
+                        {formData.isFixedPrice ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pb-1 border-b border-slate-200">
+                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block ml-1">In</label><input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[13px] font-black" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
+                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block ml-1">Out</label><input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[13px] font-black" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
+                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block ml-1">Rate</label><input type="number" onInput={handleNumInput} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[14px] font-black text-indigo-700" value={formData.monthlyRate} onChange={e=>setFormData({...formData, monthlyRate:Number(e.target.value)})} /></div>
+                  </div>
+                  {editingId && (
+                    <div className="space-y-1.5">
+                      <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-2 bg-indigo-600 text-white rounded-xl shadow-md active:scale-95 transition-all"><div className="flex items-center gap-2 pl-1"><History size={16} /><span className="font-black text-[12px] uppercase">Ledger & Billing</span></div>{showLedgerInModal ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}</button>
+                      {showLedgerInModal && (
+                        <div className="mt-1 space-y-2 max-h-[350px] overflow-y-auto pr-1">
+                          {getPaymentSchedule(formData).map((mon, idx) => (
+                            <div key={idx} className="bg-slate-50 border border-slate-300 rounded-[1.5rem] p-2 space-y-2 shadow-sm">
+                              <div className="flex items-center justify-between border-b border-slate-200 pb-1 px-1">
+                                <span className="text-[13px] font-black uppercase text-indigo-600 min-w-[45px]">{mon.label}</span>
+                                <div className="flex gap-2 text-[15px] font-black whitespace-nowrap overflow-x-auto hide-scrollbar">
+                                  <span className="text-slate-400 text-[11px]">RENT: <span className="text-slate-800 font-bold">{mon.rent.toLocaleString()}</span></span>
+                                  <span className="text-slate-400 text-[11px]">UTIL: <span className="text-slate-800 font-bold">{mon.utilOwed.toLocaleString()}</span></span>
+                                  <span className="text-slate-400 text-[11px]">Σ <span className="text-slate-800 font-black">{mon.owed.toLocaleString()}</span></span>
+                                  <span className="text-slate-400 text-[11px]">BAL: <span className={mon.paid >= mon.owed ? 'text-emerald-600 underline decoration-2' : 'text-rose-600 underline decoration-2'}>{(mon.owed - mon.paid).toLocaleString()}</span></span>
+                                </div>
+                              </div>
+                              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-2 shadow-inner">
+                                <div className="grid grid-cols-5 gap-1.5 items-center">
+                                  <div className="col-span-1 flex items-center gap-1"><Zap size={16} className="text-amber-500"/><span className="text-[13px] font-black text-slate-500 uppercase">ELEC</span></div>
+                                  <input type="number" onInput={handleNumInput} placeholder="In" className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-center outline-none" value={mon.util.elecStart} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'elecStart', e.target.value)} />
+                                  <input type="number" onInput={handleNumInput} placeholder="Out" className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-center outline-none" value={mon.util.elecEnd} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'elecEnd', e.target.value)} />
+                                  <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-1 justify-center border border-slate-200"><span className="text-[13px] font-black text-slate-400">@</span><input type="number" onInput={handleNumInput} className="w-8 bg-transparent text-[13px] font-bold text-center outline-none border-none" value={mon.util.elecRate} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'elecRate', e.target.value)} /></div>
+                                  <div className="text-right font-black text-[13px] text-amber-600">{Math.round((mon.util.elecEnd - mon.util.elecStart) * mon.util.elecRate)}฿</div>
+                                </div>
+                                <div className="grid grid-cols-5 gap-1.5 items-center border-t border-slate-100 pt-1.5">
+                                  <div className="col-span-1 flex items-center gap-1"><Droplets size={16} className="text-blue-500"/><span className="text-[13px] font-black text-slate-500 uppercase">WATER</span></div>
+                                  <div className="col-span-3 relative px-1"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] font-bold text-slate-300">฿</span><input type="number" onInput={handleNumInput} className="w-full bg-slate-50 rounded-lg p-1.5 pl-6 text-[13px] font-bold outline-none border-none" value={mon.util.water} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'water', e.target.value)} /></div>
+                                  <div className="text-right font-black text-[14px] text-slate-500 uppercase tracking-tighter">Σ {mon.utilOwed}</div>
+                                </div>
+                              </div>
+                              <div className="space-y-1 px-0.5">
+                                {mon.payments.map((p, pIdx) => (
+                                  <div key={pIdx} className="flex gap-2 items-center bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
+                                    <input type="date" className="bg-transparent text-[12px] font-bold text-slate-500 w-32 border-none outline-none" value={p.date} onChange={(e) => updatePayment(editingId, mon.monthIndex, mon.year, pIdx, 'date', e.target.value)} />
+                                    <div className="flex-1 flex items-center gap-1 border-l border-slate-200 pl-2"><span className="text-[13px] text-emerald-600 font-bold">฿</span><input type="number" onInput={handleNumInput} className="flex-1 bg-transparent text-[13px] font-black text-emerald-700 border-none outline-none" value={p.amount} onChange={(e) => updatePayment(editingId, mon.monthIndex, mon.year, pIdx, 'amount', e.target.value)} /></div>
+                                    <button type="button" onClick={() => removePayLocal(editingId, mon.monthIndex, mon.year, pIdx)} className="text-slate-300 hover:text-rose-500 p-1"><Trash size={16}/></button>
+                                  </div>
+                                ))}
+                                <div className="flex gap-2 pt-0.5">
+                                  <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-black text-slate-300">฿</span><input type="number" onInput={handleNumInput} id={`pay-${idx}`} className="w-full bg-white border border-slate-300 rounded-xl p-2 pl-7 text-[14px] font-black outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" placeholder="Add pay..." defaultValue={Math.round(mon.owed - mon.paid) > 0 ? Math.round(mon.owed - mon.paid) : ''} onKeyDown={(e) => { if (e.key === 'Enter') { addPayLocal(editingId, mon.monthIndex, mon.year, e.target.value); e.target.value = ''; }}} /></div>
+                                  <button type="button" onClick={() => { const input = document.getElementById(`pay-${idx}`); addPayLocal(editingId, mon.monthIndex, mon.year, input.value); input.value = ''; }} className="bg-slate-900 text-white p-2 rounded-xl shadow-md transition-all active:scale-90"><PlusCircle size={22}/></button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5 pt-2">
+                    <button type="submit" className="w-full bg-indigo-600 text-white py-3.5 rounded-[1.2rem] font-black text-[13px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Save Profile</button>
+                    {editingId && <button type="button" onClick={async () => { const newB = bookings.filter(b=>b.id!==editingId); setBookings(newB); await sync({ bookings: newB }); setShowModal(false); }} className="w-full py-1 text-rose-500 font-bold text-[12px] uppercase opacity-50 hover:opacity-100 flex items-center justify-center gap-1.5 transition-all"><Trash2 size={16}/> Delete</button>}
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
