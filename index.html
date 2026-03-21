@@ -1,555 +1,604 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { 
-  ChevronLeft, ChevronRight, Plus, Calendar, Trash2, AlertCircle, 
-  Receipt, ArrowRight, User, CheckCircle2, Clock, LogOut, LogIn, DollarSign, 
-  AlertTriangle, Info, ChevronDown, ChevronUp, Phone, Trash, PlusCircle, 
-  History, X, ToggleLeft, ToggleRight, Zap, Droplets, Home, Building2,
-  LayoutGrid, Settings2, LayoutDashboard, Wallet, BellRing, CalendarClock
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROP MGR - Management Suite</title>
+    <!-- 1. React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 2. Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 3. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 4. Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-100 antialiased overflow-x-hidden">
+    <div id="root"></div>
 
-// --- FIREBASE CONFIG ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'prop-mgr-app';
+    <script type="text/babel">
+        const { useState, useMemo, useEffect, Fragment } = React;
 
-const TODAY = new Date(2026, 2, 21); // March 21, 2026
+        // --- ROBUST INLINE ICON SYSTEM ---
+        const Icon = ({ name, size = 16, className = "" }) => {
+            const paths = {
+                Building2: <><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></>,
+                LayoutGrid: <><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></>,
+                BellRing: <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>,
+                LayoutDashboard: <><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></>,
+                Receipt: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V6.5"/></>,
+                Wallet: <><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></>,
+                ChevronLeft: <path d="m15 18-6-6 6-6"/>,
+                ChevronRight: <path d="m9 18 6-6-6-6"/>,
+                Plus: <path d="M12 5v14M5 12h14"/>,
+                Home: <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10"/>,
+                Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+                CheckCircle2: <><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></>,
+                AlertTriangle: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></>,
+                Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+                Droplets: <path d="M7 16.3c2.2 0 4-1.8 4-4 0-3.3-4-6.2-4-6.2s-4 2.9-4 6.2c0 2.2 1.8 4 4 4zm10 0c2.2 0 4-1.8 4-4 0-3.3-4-6.2-4-6.2s-4 2.9-4 6.2c0 2.2 1.8 4 4 4z"/>,
+                Wifi: <path d="M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M2 8.82a15 15 0 0 1 20 0M12 20h.01"/>,
+                Sparkles: <path d="m12 3-1.9 5.8a2 2 0 0 1-1.2 1.2L3 12l5.9 1.9a2 2 0 0 1 1.2 1.2l1.9 5.9 1.9-5.9a2 2 0 0 1 1.2-1.2l5.9-1.9-5.9-1.9a2 2 0 0 1-1.2-1.2L12 3z"/>,
+                Wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/>,
+                Users: <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>,
+                MoreHorizontal: <><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></>,
+                X: <path d="M18 6 6 18M6 6l12 12"/>,
+                User: <><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></>,
+                Check: <polyline points="20 6 9 17 4 12"/>,
+                Copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
+                History: <><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></>,
+                Trash: <><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></>,
+                FileText: <><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14.5 2 14.5 7.5 20 7.5"/></>,
+                CalendarClock: <><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4M8 2v4M3 10h5"/><circle cx="18" cy="18" r="4"/><path d="M18 16.5V18l1 1"/></>
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {paths[name]}
+                </svg>
+            );
+        };
 
-// --- UTILS ---
-const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+        // --- CONFIG ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'prop-mgr-stable-v1';
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUser = urlParams.get('user') || 'default';
+        const TODAY = new Date(2026, 2, 21);
 
-const getMonthYearShort = (date) => {
-  const m = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
-  return `${m.toUpperCase()} ${date.getFullYear()}`;
-};
+        const BILL_CATEGORIES = [
+            { id: 'Lease', icon: 'Building2', color: 'text-indigo-600' },
+            { id: 'Electric', icon: 'Zap', color: 'text-amber-500' },
+            { id: 'Water', icon: 'Droplets', color: 'text-blue-500' },
+            { id: 'Wifi', icon: 'Wifi', color: 'text-sky-500' },
+            { id: 'Cleaning', icon: 'Sparkles', color: 'text-teal-500' },
+            { id: 'Repair', icon: 'Wrench', color: 'text-orange-500' },
+            { id: 'Staff', icon: 'Users', color: 'text-purple-500' },
+            { id: 'Other', icon: 'MoreHorizontal', color: 'text-slate-400' },
+        ];
 
-const formatDateShort = (dateStr) => {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
-
-// Compact format for Vacancy: e.g., 21MAR26
-const formatVacancyDate = (date) => {
-  if (!date) return '∞';
-  const d = new Date(date);
-  const day = d.getDate();
-  const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(d).toUpperCase();
-  const year = d.getFullYear().toString().slice(-2);
-  return `${day}${month}${year}`;
-};
-
-const toISODate = (date) => date.toLocaleDateString('sv-SE');
-
-export default function App() {
-  // --- STATE ---
-  const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('calendar');
-  const [viewDate, setViewDate] = useState(new Date(2026, 2, 1));
-  const [rooms, setRooms] = useState(Array.from({ length: 12 }, (_, i) => ({ id: `r${i}`, name: `${101 + i}` })));
-  const [bookings, setBookings] = useState([]);
-  const [paymentLog, setPaymentLog] = useState({});
-  const [utilityLog, setUtilityLog] = useState({});
-  
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [showLedgerInModal, setShowLedgerInModal] = useState(false);
-  const [error, setError] = useState('');
-  const [formData, setFormData] = useState({ 
-    guestName: '', contact: '', room: '101', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto'
-  });
-
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-  const daysInMonth = getDaysInMonth(year, month);
-  const isTodayVisible = TODAY.getFullYear() === year && TODAY.getMonth() === month;
-  const todayDay = TODAY.getDate();
-
-  // --- DATABASE PERSISTENCE ---
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (e) { console.error("Auth failed", e); }
-    };
-    initAuth();
-    return onAuthStateChanged(auth, setUser);
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'appState', 'main'), (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (d.bookings) setBookings(d.bookings);
-        if (d.paymentLog) setPaymentLog(d.paymentLog);
-        if (d.utilityLog) setUtilityLog(d.utilityLog);
-        if (d.rooms) setRooms(d.rooms);
-      }
-    });
-    return unsub;
-  }, [user]);
-
-  const sync = async (update) => {
-    if (!user) return;
-    try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appState', 'main'), update, { merge: true }); }
-    catch (e) { console.error("Sync failed", e); }
-  };
-
-  // --- ACTIONS ---
-  const updateUtility = (bookingId, m, y, field, value) => {
-    const key = `${bookingId}_${m}_${y}`;
-    const cleanValue = value === '' ? 0 : Number(value);
-    const newUtilLog = {
-      ...utilityLog,
-      [key]: { ...(utilityLog[key] || { elecStart: 0, elecEnd: 0, elecRate: 8, water: 200 }), [field]: cleanValue }
-    };
-    setUtilityLog(newUtilLog);
-    sync({ utilityLog: newUtilLog });
-  };
-
-  const addPayLocal = (bookingId, m, y, amount) => {
-    if (!amount || amount <= 0) return;
-    const key = `${bookingId}_${m}_${y}`;
-    const newEntry = { amount: Math.round(Number(amount)), date: toISODate(new Date()) };
-    const newLog = { ...paymentLog, [key]: [...(paymentLog[key] || []), newEntry] };
-    setPaymentLog(newLog);
-    sync({ paymentLog: newLog });
-  };
-
-  const updatePayment = (bookingId, m, y, index, field, value) => {
-    const key = `${bookingId}_${m}_${y}`;
-    const updatedEntries = [...(paymentLog[key] || [])];
-    updatedEntries[index] = { ...updatedEntries[index], [field]: field === 'amount' ? Math.round(Number(value)) : value };
-    const newLog = { ...paymentLog, [key]: updatedEntries };
-    setPaymentLog(newLog);
-    sync({ paymentLog: newLog });
-  };
-
-  const removePayLocal = (bookingId, m, y, idx) => {
-    const key = `${bookingId}_${m}_${y}`;
-    const entries = [...(paymentLog[key] || [])];
-    entries.splice(idx, 1);
-    const newLog = { ...paymentLog, [key]: entries };
-    setPaymentLog(newLog);
-    sync({ paymentLog: newLog });
-  };
-
-  const handleNumInput = (e) => {
-    const val = e.target.value;
-    if (val.length > 1 && val.startsWith('0')) {
-      e.target.value = val.substring(1);
-    }
-  };
-
-  // --- CALCULATIONS ---
-  const getPaymentSchedule = (booking) => {
-    if (!booking) return [];
-    const start = new Date(booking.start);
-    const end = new Date(booking.end);
-    const schedule = [];
-    let current = new Date(start.getFullYear(), start.getMonth(), 1);
-    let isFirst = true;
-    while (current <= end) {
-      const currY = current.getFullYear();
-      const currM = current.getMonth();
-      const mDays = getDaysInMonth(currY, currM);
-      const sInM = currM === start.getMonth() && currY === start.getFullYear() ? start.getDate() : 1;
-      const eInM = currM === end.getMonth() && currY === end.getFullYear() ? end.getDate() : mDays + 1;
-      const days = Math.max(0, eInM - sInM);
-      if (days > 0) {
-        let rent = booking.isFixedPrice ? (isFirst ? booking.monthlyRate : 0) : Math.round((days >= mDays ? booking.monthlyRate : (booking.monthlyRate / mDays) * days));
-        isFirst = false;
-        const key = `${booking.id}_${currM}_${currY}`;
-        const util = utilityLog[key] || { elecStart: 0, elecEnd: 0, elecRate: 8, water: 200 };
-        let utilOwed = 0;
-        if (util.elecEnd > 0) {
-           const elec = Math.max(0, (util.elecEnd - util.elecStart) * util.elecRate);
-           utilOwed = Math.round(elec + util.water);
-        }
-        const total = rent + utilOwed;
-        const paid = (paymentLog[key] || []).reduce((s, p) => s + p.amount, 0);
-        schedule.push({ monthIndex: currM, year: currY, label: new Intl.DateTimeFormat('en-US', { month: 'short' }).format(current), rent, utilOwed, owed: total, paid, util, payments: paymentLog[key] || [] });
-      }
-      current = new Date(currY, currM + 1, 1);
-    }
-    return schedule;
-  };
-
-  const getStatus = (booking) => {
-    if (booking.manualStatus === 'checked-in') return { label: 'In', Icon: Home, color: 'text-emerald-500' };
-    if (booking.manualStatus === 'checked-out') return { label: 'Out', Icon: CheckCircle2, color: 'text-slate-400' };
-    const s = new Date(booking.start), e = new Date(booking.end);
-    if (TODAY < s) return { label: 'Future', Icon: Clock, color: 'text-blue-500' };
-    if (TODAY >= s && TODAY < e) return { label: 'In', Icon: Home, color: 'text-emerald-500' };
-    return { label: 'Out', Icon: CheckCircle2, color: 'text-slate-400' };
-  };
-
-  const getBarColor = (booking, balance) => {
-    const s = getStatus(booking);
-    if (s.label === 'Out') return 'bg-slate-400';
-    if (s.label === 'Future') return 'bg-blue-600';
-    return balance > 0 ? 'bg-rose-600' : 'bg-emerald-600';
-  };
-
-  // --- HANDLERS ---
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!formData.guestName || !formData.start || !formData.end) return setError('Missing data');
-    const overlap = bookings.find(b => b.id !== editingId && b.room === formData.room && (new Date(formData.start) < new Date(b.end) && new Date(formData.end) > new Date(b.start)));
-    if (overlap) return setError(`Overlap: ${overlap.guestName}`);
-    const newB = editingId ? bookings.map(b => b.id === editingId ? { ...formData, id: editingId } : b) : [...bookings, { ...formData, id: Date.now().toString(), color: 'bg-indigo-600', manualStatus: 'auto' }];
-    setBookings(newB);
-    await sync({ bookings: newB });
-    setShowModal(false);
-  };
-
-  const handleGridClick = (room, dayIndex) => {
-    const selectedDate = new Date(year, month, dayIndex + 1, 12, 0, 0);
-    const dateStr = toISODate(selectedDate);
-    setEditingId(null);
-    setFormData({ guestName: '', contact: '', room: room, start: dateStr, end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto' });
-    setShowModal(true);
-    setError('');
-  };
-
-  // --- TABS LOGIC ---
-  const vacancies = useMemo(() => {
-    const list = [];
-    rooms.forEach(room => {
-      const roomBookings = bookings
-        .filter(b => b.room === room.name)
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
-      
-      let lastCheckOut = new Date(TODAY);
-      roomBookings.forEach(b => {
-        const checkIn = new Date(b.start);
-        if (checkIn > lastCheckOut) {
-          list.push({ room: room.name, from: new Date(lastCheckOut), to: new Date(checkIn) });
-        }
-        const bEnd = new Date(b.end);
-        if (bEnd > lastCheckOut) lastCheckOut = bEnd;
-      });
-      list.push({ room: room.name, from: new Date(lastCheckOut), to: null });
-    });
-    return list.sort((a, b) => a.from - b.from);
-  }, [bookings, rooms]);
-
-  const remindersData = useMemo(() => {
-    const res = { overdue: [], current: [], upcoming: [] };
-    bookings.forEach(b => {
-      const schedule = getPaymentSchedule(b);
-      schedule.forEach(s => {
-        const balance = s.owed - s.paid;
-        if (balance > 0) {
-          if (new Date(s.year, s.monthIndex + 1, 0) < TODAY) res.overdue.push({ guest: b.guestName, room: b.room, amt: balance, type: 'Rent/Utils' });
-          else res.current.push({ guest: b.guestName, room: b.room, amt: balance, type: 'Balance' });
-        }
-      });
-      const start = new Date(b.start), end = new Date(b.end);
-      const diffIn = Math.ceil((start - TODAY) / (1000 * 60 * 60 * 24));
-      const diffOut = Math.ceil((end - TODAY) / (1000 * 60 * 60 * 24));
-      if (diffIn >= 0 && diffIn <= 7) res.upcoming.push({ text: `Check-in: ${b.guestName}`, room: b.room, date: b.start });
-      if (diffOut >= 0 && diffOut <= 7) res.upcoming.push({ text: `Check-out: ${b.guestName}`, room: b.room, date: b.end });
-    });
-    return res;
-  }, [bookings, utilityLog, paymentLog]);
-
-  return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 p-1 font-sans antialiased">
-      <div className="max-w-[1800px] mx-auto">
-        
-        {/* GLOBAL HEADER (Line 1): PROP MGR | TABS ONLY */}
-        <div className="flex flex-wrap justify-between items-center mb-1 gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-300">
-          <div className="flex items-center gap-3 pl-1">
-            <div className="bg-indigo-800 p-1 rounded-xl text-white shadow-sm"><Building2 size={20} /></div>
-            <h1 className="text-[14px] font-black tracking-tighter uppercase mr-3">PROP MGR</h1>
+        function App() {
+            const [user, setUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('calendar');
+            const [selectedProperty, setSelectedProperty] = useState('All');
+            const [viewDate, setViewDate] = useState(new Date(2026, 2, 1));
             
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 gap-0.5">
-              {[
-                { id: 'calendar', label: 'CALENDAR', icon: LayoutGrid },
-                { id: 'reminders', label: 'REMINDERS', icon: BellRing },
-                { id: 'vacancy', label: 'VACANCY', icon: LayoutDashboard },
-                { id: 'bills', label: 'BILLS', icon: Receipt },
-                { id: 'accounting', label: 'ACCOUNTING', icon: Wallet }
-              ].map(t => {
-                const TabIcon = t.icon;
-                return (
-                  <button 
-                    key={t.id} 
-                    onClick={() => setActiveTab(t.id)} 
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase transition-all ${activeTab === t.id ? 'bg-white text-indigo-700 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                  >
-                    <TabIcon size={14} /> <span>{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+            const [rooms, setRooms] = useState([]);
+            const [bookings, setBookings] = useState([]);
+            const [paymentLog, setPaymentLog] = useState({});
+            const [utilityLog, setUtilityLog] = useState({});
+            const [bills, setBills] = useState([]);
+            const [properties, setProperties] = useState(['Property A', 'Property B']);
 
-        {/* CONTENT AREA */}
-        {activeTab === 'calendar' ? (
-          <div className="space-y-1 animate-in fade-in duration-300">
-            
-            {/* LOCAL CONTROLS: KEY | MONTH | +NEW (Strictly inside Calendar tab) */}
-            <div className="flex flex-wrap items-center justify-between px-2 py-0.5">
-               <div className="flex items-center gap-2 bg-white/60 border border-slate-300 px-3 py-1.5 rounded-xl">
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><Home size={13} className="text-emerald-500" /> IN</div>
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><Clock size={13} className="text-blue-500" /> FUT</div>
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase"><CheckCircle2 size={13} className="text-slate-400" /> OUT</div>
-                  <div className="w-px h-3 bg-slate-300 mx-1" />
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> PAID</div>
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" /> OWES</div>
-               </div>
+            const [showModal, setShowModal] = useState(false);
+            const [editingId, setEditingId] = useState(null);
+            const [showLedgerInModal, setShowLedgerInModal] = useState(false);
+            const [error, setError] = useState('');
+            const [formData, setFormData] = useState({ 
+                guestName: '', contact: '', room: '', property: 'Property A', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto'
+            });
 
-               <div className="flex items-center gap-2">
-                 <div className="flex items-center bg-white p-0.5 rounded-xl gap-0.5 border border-slate-300 shadow-sm">
-                    <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="p-0.5 hover:bg-slate-50 rounded transition-all"><ChevronLeft size={18}/></button>
-                    <span className="font-black px-2 min-w-[95px] text-center text-[12px] uppercase">{getMonthYearShort(viewDate)}</span>
-                    <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-0.5 hover:bg-slate-50 rounded transition-all"><ChevronRight size={18}/></button>
-                 </div>
-                 <button onClick={() => { setEditingId(null); setFormData({guestName:'', contact:'', room: (rooms && rooms.length > 0) ? rooms[0].name : '101', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto'}); setShowModal(true); setError(''); }} className="bg-indigo-600 text-white px-4 py-1.5 rounded-xl font-black text-[12px] uppercase shadow-md active:scale-95 transition-all flex items-center gap-1">
-                   <Plus size={16} strokeWidth={3} /> NEW
-                 </button>
-               </div>
-            </div>
+            const [showBillModal, setShowBillModal] = useState(false);
+            const [editingBillId, setEditingBillId] = useState(null);
+            const [billFormData, setBillFormData] = useState({ title: '', category: 'Electric', property: 'Property A', amount: 0, dueDate: '', payments: [] });
 
-            {/* The Grid */}
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-400 overflow-hidden relative">
-              <div className="overflow-x-auto">
-                <div className="min-w-[1000px] relative">
-                  <div className="grid border-b border-slate-400 bg-slate-50" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)` }}>
-                    <div className="p-1 font-black text-slate-400 text-[12px] uppercase border-r border-slate-400 bg-slate-50 sticky left-0 z-40 text-center flex items-center justify-center">Unit</div>
-                    {Array.from({ length: daysInMonth }).map((_, i) => (
-                      <div key={i} className={`py-1 text-center border-r border-slate-300 ${isTodayVisible && (i+1) === todayDay ? 'bg-indigo-50' : ''}`}>
-                        <span className="text-[12px] text-slate-400 font-bold block uppercase opacity-50 leading-none">{new Date(year, month, i+1).toLocaleDateString('en',{weekday:'short'}).charAt(0)}</span>
-                        <span className={`text-[12px] font-black mt-1 ${isTodayVisible && (i+1) === todayDay ? 'text-indigo-600 underline' : 'text-slate-700'}`}>{i+1}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {isTodayVisible && (
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-indigo-500 z-30 pointer-events-none" style={{ left: `calc(85px + ((100% - 85px) / ${daysInMonth}) * ${todayDay - 0.5})` }}>
-                      <div className="bg-indigo-600 text-white text-[12px] font-black px-1.5 py-0.5 rounded absolute top-0.5 left-1/2 -translate-x-1/2 shadow z-50">TODAY</div>
-                    </div>
-                  )}
-                  {rooms.map(r => (
-                    <div key={r.id} className="grid border-b border-slate-400 last:border-0 relative group" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)`, minHeight: '42px' }}>
-                      <div className="p-1 sticky left-0 z-20 bg-white border-r border-slate-400 flex items-center justify-center shadow-[2px_0_5px_rgba(0,0,0,0.05)] overflow-hidden">
-                        <input className="w-full bg-transparent text-center font-black text-[12px] text-slate-600 uppercase focus:bg-slate-100 outline-none rounded" value={r.name} onChange={(e) => { const n = [...rooms]; n.find(x=>x.id===r.id).name = e.target.value; setRooms(n); sync({ rooms: n }); }} />
-                      </div>
-                      {Array.from({ length: daysInMonth }).map((_, i) => (
-                        <div key={i} onClick={() => handleGridClick(r.name, i)} className="border-r border-slate-300 last:border-0 cursor-cell hover:bg-slate-50 transition-colors" />
-                      ))}
-                      {bookings.filter(b => b.room === r.name).map(booking => {
-                        const bS = new Date(booking.start), bE = new Date(booking.end);
-                        const mS = new Date(year, month, 1), mE = new Date(year, month, daysInMonth);
-                        if (bE <= mS || bS > mE) return null;
-                        const dS = Math.max(1, bS.getMonth() === month && bS.getFullYear() === year ? bS.getDate() : 1);
-                        const dE = Math.min(daysInMonth, bE.getMonth() === month && bE.getFullYear() === year ? bE.getDate() : daysInMonth);
-                        const sch = getPaymentSchedule(booking).find(s => s.monthIndex === month && s.year === year);
-                        const bal = sch ? Math.round(sch.owed - sch.paid) : 0;
-                        const color = getBarColor(booking, bal);
-                        const { Icon: StatusIcon } = getStatus(booking);
-                        return (
-                          <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1 border border-white/20 flex items-center px-2 z-10 transition-all hover:scale-[1.01] cursor-pointer shadow-md ${color} ${bS < mS ? 'rounded-l-none' : 'rounded-xl'} ${bE > mE ? 'rounded-r-none' : 'rounded-xl'}`} style={{ gridColumnStart: dS + 1, gridColumnEnd: dE + 2, left: bS < mS ? 0 : '1px', right: bE > mE ? 0 : '1px' }}>
-                            <div className="flex items-center gap-1.5 w-full text-white whitespace-nowrap overflow-hidden font-black text-[13px] tracking-tight uppercase">
-                              <div className={`w-3 h-3 rounded-full border border-white/40 shrink-0 ${bal <= 0 ? 'bg-emerald-400' : 'bg-rose-100 animate-pulse'}`} />
-                              <StatusIcon size={13} className="shrink-0 opacity-90" />
-                              {bS < mS && <span className="text-[10px] opacity-60">← PREV |</span>}
-                              <span className="truncate">{booking.guestName}</span>
-                              <span className="opacity-40">|</span>
-                              <span className={bal > 0 ? "text-rose-100" : "text-emerald-100"}>{bal > 0 ? `${bal}` : "✓"}</span>
-                              {bE > mE && <span className="text-[10px] opacity-60 ml-auto">| NEXT →</span>}
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const isTodayVisible = TODAY.getFullYear() === year && TODAY.getMonth() === month;
+            const todayDay = TODAY.getDate();
+
+            // --- HELPERS ---
+            const toISODate = (date) => date.toLocaleDateString('sv-SE');
+            const getMonthYearShort = (date) => `${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date).toUpperCase()} ${date.getFullYear()}`;
+            const formatVacancyDate = (date) => {
+                if (!date) return '∞';
+                const d = new Date(date);
+                return `${d.getDate()}${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(d).toUpperCase()}${d.getFullYear().toString().slice(-2)}`;
+            };
+
+            // --- DATABASE ---
+            useEffect(() => {
+                const initAuth = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await auth.signInWithCustomToken(__initial_auth_token);
+                    else await auth.signInAnonymously();
+                };
+                initAuth();
+                const unsub = auth.onAuthStateChanged(setUser);
+                return () => unsub();
+            }, []);
+
+            useEffect(() => {
+                if (!user) return;
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser);
+                const unsub = docRef.onSnapshot((snap) => {
+                    if (snap.exists) {
+                        const d = snap.data();
+                        if (d.bookings) setBookings(d.bookings);
+                        if (d.rooms) setRooms(d.rooms);
+                        if (d.paymentLog) setPaymentLog(d.paymentLog);
+                        if (d.utilityLog) setUtilityLog(d.utilityLog);
+                        if (d.bills) setBills(d.bills);
+                        if (d.properties) setProperties(d.properties);
+                    } else {
+                        const initR = Array.from({ length: 12 }, (_, i) => ({ id: `r${i}`, name: `${101 + i}`, property: 'Property A' }));
+                        setRooms(initR);
+                        docRef.set({ rooms: initR, properties: ['Property A', 'Property B'], bookings: [], paymentLog: {}, utilityLog: {}, bills: [] });
+                    }
+                });
+                return unsub;
+            }, [user]);
+
+            const sync = async (update) => {
+                if (!user) return;
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser).set(update, { merge: true });
+            };
+
+            // --- CALCULATIONS ---
+            const getPaymentSchedule = (booking) => {
+                if (!booking) return [];
+                const start = new Date(booking.start), end = new Date(booking.end);
+                const schedule = [];
+                let current = new Date(start.getFullYear(), start.getMonth(), 1);
+                let isFirst = true;
+                while (current <= end) {
+                    const cY = current.getFullYear(), cM = current.getMonth();
+                    const mD = new Date(cY, cM + 1, 0).getDate();
+                    const sInM = cM === start.getMonth() && cY === start.getFullYear() ? start.getDate() : 1;
+                    const eInM = cM === end.getMonth() && cY === end.getFullYear() ? end.getDate() : mD + 1;
+                    const days = Math.max(0, eInM - sInM);
+                    if (days > 0) {
+                        let rent = booking.isFixedPrice ? (isFirst ? booking.monthlyRate : 0) : Math.round((days >= mD ? booking.monthlyRate : (booking.monthlyRate / mD) * days));
+                        isFirst = false;
+                        const key = `${booking.id}_${cM}_${cY}`;
+                        const util = utilityLog[key] || { elecStart: 0, elecEnd: 0, elecRate: 8, water: 200 };
+                        let utilOwed = util.elecEnd > 0 ? Math.round(Math.max(0, (util.elecEnd - util.elecStart) * util.elecRate) + util.water) : 0;
+                        const paid = (paymentLog[key] || []).reduce((s, p) => s + p.amount, 0);
+                        schedule.push({ monthIndex: cM, year: cY, label: new Intl.DateTimeFormat('en-US', { month: 'short' }).format(current), rent, utilOwed, owed: rent + utilOwed, paid, util, payments: paymentLog[key] || [] });
+                    }
+                    current = new Date(cY, cM + 1, 1);
+                }
+                return schedule;
+            };
+
+            const filteredRooms = useMemo(() => rooms.filter(r => selectedProperty === 'All' || r.property === selectedProperty), [rooms, selectedProperty]);
+            const filteredBookings = useMemo(() => bookings.filter(b => {
+                const room = rooms.find(r => r.name === b.room);
+                return selectedProperty === 'All' || (room && room.property === selectedProperty);
+            }), [bookings, rooms, selectedProperty]);
+            const filteredBills = useMemo(() => bills.filter(b => selectedProperty === 'All' || b.property === selectedProperty), [bills, selectedProperty]);
+
+            const getStatus = (b) => {
+                if (b.manualStatus === 'checked-in') return { label: 'In', icon: 'Home', color: 'text-emerald-500' };
+                if (b.manualStatus === 'checked-out') return { label: 'Out', icon: 'CheckCircle2', color: 'text-slate-400' };
+                const s = new Date(b.start), e = new Date(b.end);
+                if (TODAY < s) return { label: 'Future', icon: 'Clock', color: 'text-blue-500' };
+                if (TODAY >= s && TODAY < e) return { label: 'In', icon: 'Home', color: 'text-emerald-500' };
+                return { label: 'Out', icon: 'CheckCircle2', color: 'text-slate-400' };
+            };
+
+            const getBarColor = (b, bal) => {
+                const s = getStatus(b);
+                if (s.label === 'Out') return 'bg-slate-400';
+                if (s.label === 'Future') return 'bg-blue-600';
+                return bal > 0 ? 'bg-rose-600' : 'bg-emerald-600';
+            };
+
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const newB = editingId ? bookings.map(b => b.id === editingId ? { ...formData, id: editingId } : b) : [...bookings, { ...formData, id: Date.now().toString(), color: 'bg-indigo-600', manualStatus: 'auto' }];
+                setBookings(newB); await sync({ bookings: newB }); setShowModal(false);
+            };
+
+            const addPayLocal = async (bookingId, m, y, amount) => {
+                if (!amount || amount <= 0) return;
+                const key = `${bookingId}_${m}_${y}`;
+                const newLog = { ...paymentLog, [key]: [...(paymentLog[key] || []), { amount: Math.round(Number(amount)), date: toISODate(new Date()) }] };
+                setPaymentLog(newLog); await sync({ paymentLog: newLog });
+            };
+
+            const quickPayBill = async (bill) => {
+                const paid = (bill.payments || []).reduce((s, p) => s + p.amount, 0);
+                const bal = bill.amount - paid;
+                if (bal <= 0) return;
+                const updated = bills.map(b => b.id === bill.id ? { ...b, payments: [...(b.payments || []), { amount: bal, date: toISODate(new Date()) }] } : b);
+                setBills(updated); await sync({ bills: updated });
+            };
+
+            const duplicateBill = async (bill) => {
+                const d = new Date(bill.dueDate); d.setMonth(d.getMonth() + 1);
+                const updated = [...bills, { ...bill, id: Date.now().toString(), payments: [], dueDate: toISODate(d) }];
+                setBills(updated); await sync({ bills: updated });
+            };
+
+            const vacancies = useMemo(() => {
+                const list = [];
+                filteredRooms.forEach(room => {
+                    const roomBookings = filteredBookings.filter(b => b.room === room.name).sort((a, b) => new Date(a.start) - new Date(b.start));
+                    let last = new Date(TODAY);
+                    roomBookings.forEach(b => {
+                        const start = new Date(b.start);
+                        if (start > last) list.push({ room: room.name, from: new Date(last), to: new Date(start) });
+                        if (new Date(b.end) > last) last = new Date(b.end);
+                    });
+                    list.push({ room: room.name, from: new Date(last), to: null });
+                });
+                return list.sort((a, b) => a.from - b.from);
+            }, [filteredBookings, filteredRooms]);
+
+            const remindersData = useMemo(() => {
+                const res = { overdue: [], current: [], upcoming: [], billOverdue: [] };
+                filteredBookings.forEach(b => {
+                    getPaymentSchedule(b).forEach(s => {
+                        const bal = s.owed - s.paid;
+                        if (bal > 0) {
+                            if (new Date(s.year, s.monthIndex + 1, 0) < TODAY) res.overdue.push({ guest: b.guestName, room: b.room, amt: bal });
+                            else res.current.push({ guest: b.guestName, room: b.room, amt: bal });
+                        }
+                    });
+                    const s = new Date(b.start), e = new Date(b.end);
+                    const dI = Math.ceil((s-TODAY)/86400000), dO = Math.ceil((e-TODAY)/86400000);
+                    if (dI >= 0 && dI <= 7) res.upcoming.push({ text: `In: ${b.guestName}`, room: b.room, date: b.start });
+                    if (dO >= 0 && dO <= 7) res.upcoming.push({ text: `Out: ${b.guestName}`, room: b.room, date: b.end });
+                });
+                filteredBills.forEach(bill => {
+                    const paid = (bill.payments || []).reduce((s,p)=>s+p.amount,0);
+                    const bal = bill.amount - paid;
+                    if (bal > 0) {
+                        const due = new Date(bill.dueDate);
+                        const label = bill.category === 'Other' ? bill.title : bill.category.toUpperCase();
+                        if (due < TODAY) res.billOverdue.push({ title: label, amt: bal, date: bill.dueDate });
+                        else if (Math.ceil((due-TODAY)/86400000) <= 7) res.upcoming.push({ text: `Bill: ${label}`, room: bill.property, date: bill.dueDate });
+                    }
+                });
+                return res;
+            }, [filteredBookings, filteredBills, paymentLog, utilityLog]);
+
+            const accountingData = useMemo(() => {
+                let inc = 0, exp = 0;
+                filteredBookings.forEach(b => getPaymentSchedule(b).forEach(s => inc += s.paid));
+                filteredBills.forEach(bill => exp += (bill.payments || []).reduce((s, p) => s + p.amount, 0));
+                return { income: inc, expense: exp, net: inc - exp };
+            }, [filteredBookings, filteredBills]);
+
+            return (
+                <div className="min-h-screen text-slate-900 bg-slate-100 font-sans p-1">
+                    <div className="max-w-[1800px] mx-auto">
+                        
+                        {/* LINE 1: GLOBAL HEADER */}
+                        <div className="flex flex-wrap justify-between items-center mb-1 gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-300">
+                            <div className="flex items-center gap-3 pl-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-indigo-800 p-1.5 rounded-xl text-white shadow-sm"><Icon name="Building2" size={20} /></div>
+                                    <h1 className="text-[14px] font-black tracking-tighter uppercase mr-3">PROP MGR</h1>
+                                </div>
+                                <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 gap-0.5">
+                                    {[
+                                        { id: 'calendar', label: 'CALENDAR', icon: 'LayoutGrid' },
+                                        { id: 'reminders', label: 'REMINDERS', icon: 'BellRing' },
+                                        { id: 'vacancy', label: 'VACANCY', icon: 'LayoutDashboard' },
+                                        { id: 'bills', label: 'BILLS', icon: 'Receipt' },
+                                        { id: 'accounting', label: 'ACCOUNTING', icon: 'Wallet' }
+                                    ].map(t => (
+                                        <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase transition-all ${activeTab === t.id ? 'bg-white text-indigo-700 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}>
+                                            <Icon name={t.icon} size={14} /> <span className="hidden md:inline ml-1">{t.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : activeTab === 'reminders' ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-2 animate-in slide-in-from-bottom duration-300">
-             <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
-                <h3 className="text-rose-600 font-black text-[13px] uppercase flex items-center gap-2 mb-3"><AlertTriangle size={16}/> Overdue Payments</h3>
-                <div className="space-y-2">
-                   {remindersData.overdue.map((r, i) => (
-                     <div key={i} className="bg-rose-50 p-2 rounded-xl border border-rose-100 flex justify-between items-center">
-                        <div><p className="text-[14px] font-black text-rose-900">{r.guest}</p><p className="text-[11px] font-bold text-rose-500 uppercase">Unit {r.room} • {r.type}</p></div>
-                        <div className="text-right text-rose-600 font-black text-[15px]">{r.amt.toLocaleString()} ฿</div>
-                     </div>
-                   ))}
-                   {remindersData.overdue.length === 0 && <p className="text-slate-400 text-[12px] font-bold uppercase italic">No overdue items</p>}
-                </div>
-             </div>
-             <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
-                <h3 className="text-indigo-600 font-black text-[13px] uppercase flex items-center gap-2 mb-3"><Wallet size={16}/> Current Balances</h3>
-                <div className="space-y-2">
-                   {remindersData.current.map((r, i) => (
-                     <div key={i} className="bg-slate-50 p-2 rounded-xl border border-slate-200 flex justify-between items-center">
-                        <div><p className="text-[14px] font-black text-slate-800">{r.guest}</p><p className="text-[11px] font-bold text-slate-400 uppercase">Unit {r.room}</p></div>
-                        <div className="text-right text-indigo-600 font-black text-[15px]">{r.amt.toLocaleString()} ฿</div>
-                     </div>
-                   ))}
-                   {remindersData.current.length === 0 && <p className="text-slate-400 text-[12px] font-bold uppercase italic">Everyone paid up</p>}
-                </div>
-             </div>
-             <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
-                <h3 className="text-emerald-600 font-black text-[13px] uppercase flex items-center gap-2 mb-3"><CalendarClock size={16}/> Logistics (7 Days)</h3>
-                <div className="space-y-2">
-                   {remindersData.upcoming.map((r, i) => (
-                     <div key={i} className="bg-emerald-50 p-2 rounded-xl border border-emerald-100">
-                        <p className="text-[14px] font-black text-emerald-900">{r.text}</p>
-                        <p className="text-[11px] font-bold text-emerald-500 uppercase">Unit {r.room} • {r.date}</p>
-                     </div>
-                   ))}
-                   {remindersData.upcoming.length === 0 && <p className="text-slate-400 text-[12px] font-bold uppercase italic">Quiet week ahead</p>}
-                </div>
-             </div>
-          </div>
-        ) : activeTab === 'vacancy' ? (
-          <div className="bg-white rounded-[2rem] p-6 border border-slate-300 max-w-xl mx-auto shadow-xl animate-in zoom-in duration-300">
-             <h2 className="text-[14px] font-black uppercase mb-4 text-indigo-700 flex items-center gap-2"><LayoutDashboard size={18}/> Vacancy Report</h2>
-             <div className="space-y-2">
-                {vacancies.map((v, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200 group hover:bg-white transition-all shadow-sm">
-                    <div className="flex items-center gap-1 font-black text-[15px] text-slate-800 tracking-tight">
-                       <span className="text-indigo-600 w-10 text-center">{v.room}:</span>
-                       <span className="ml-2">{formatVacancyDate(v.from)}</span>
-                       <span className="mx-2 text-slate-300">→</span>
-                       <span className={v.to ? "text-slate-800" : "text-emerald-600"}>{formatVacancyDate(v.to)}</span>
-                    </div>
-                    <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border ${v.to ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
-                       {v.to ? 'Window' : 'Open'}
-                    </div>
-                  </div>
-                ))}
-                {vacancies.length === 0 && <p className="text-center text-slate-400 py-10 font-bold uppercase italic">All rooms occupied</p>}
-             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-[2rem] p-10 text-center border-2 border-dashed border-slate-300 min-h-[400px] flex flex-col items-center justify-center">
-             <div className="bg-slate-50 p-6 rounded-full mb-4 text-slate-300"><History size={48}/></div>
-             <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">{activeTab.toUpperCase()} Section</h2>
-             <p className="text-slate-400 text-[12px] mt-2 font-bold uppercase tracking-widest">Persistence active. Data is synced to cloud.</p>
-          </div>
-        )}
-
-        {/* Management Modal */}
-        {showModal && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 overflow-y-auto">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in duration-200 my-auto border border-slate-300">
-              <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
-                <div className="flex items-center gap-2 pl-2">
-                  <div className={`p-1.5 rounded-xl text-white shadow-sm ${editingId ? 'bg-indigo-600' : 'bg-slate-900'}`}><User size={16} /></div>
-                  <h2 className="text-[12px] font-black uppercase tracking-widest">{editingId ? 'Profile' : 'New Stay'}</h2>
-                </div>
-                <button type="button" onClick={() => { setShowModal(false); setShowLedgerInModal(false); setError(''); }} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-all"><X size={24}/></button>
-              </div>
-              <div className="p-3 space-y-2">
-                {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 p-2 rounded-xl text-[12px] font-black uppercase flex items-center gap-1 shadow-sm"><AlertTriangle size={16}/> {error}</div>}
-                <form onSubmit={handleSave} className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="text" className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Name" value={formData.guestName} onChange={e=>setFormData({...formData, guestName:e.target.value})} />
-                    <input type="text" className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[13px] font-bold outline-none" placeholder="Contact" value={formData.contact} onChange={e=>setFormData({...formData, contact:e.target.value})} />
-                  </div>
-                  <div className="flex items-center gap-2 bg-slate-50 p-1.5 border border-slate-200 rounded-xl shadow-inner">
-                    <span className="text-[12px] font-black text-slate-400 uppercase ml-1">Status:</span>
-                    <div className="flex bg-white rounded-lg p-0.5 border border-slate-200 flex-1">
-                      {['auto', 'checked-in', 'checked-out'].map(s => (
-                        <button key={s} type="button" onClick={() => setFormData({...formData, manualStatus: s})} className={`flex-1 py-1 rounded text-[11px] font-black uppercase transition-all ${formData.manualStatus === s ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400'}`}>{s}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 bg-slate-50 p-2 border border-slate-200 rounded-xl shadow-sm">
-                    <div className="flex items-center gap-2 text-[14px] font-black pl-1">
-                      <span className="text-slate-400 uppercase">Unit:</span>
-                      <select className="bg-transparent text-indigo-600 font-black outline-none appearance-none cursor-pointer" value={formData.room} onChange={e=>setFormData({...formData, room:e.target.value})}>
-                        {rooms.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] font-black">
-                      <span className="text-slate-400 uppercase">Fixed?</span>
-                      <button type="button" onClick={() => setFormData({...formData, isFixedPrice: !formData.isFixedPrice})} className={`p-0.5 rounded-full transition-all ${formData.isFixedPrice ? 'bg-indigo-600 text-white' : 'bg-slate-200'}`}>
-                        {formData.isFixedPrice ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 pb-1 border-b border-slate-200">
-                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block ml-1">In</label><input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[13px] font-black" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
-                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block ml-1">Out</label><input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[13px] font-black" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
-                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block ml-1">Rate</label><input type="number" onInput={handleNumInput} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[14px] font-black text-indigo-700" value={formData.monthlyRate} onChange={e=>setFormData({...formData, monthlyRate:Number(e.target.value)})} /></div>
-                  </div>
-                  {editingId && (
-                    <div className="space-y-1.5">
-                      <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-2 bg-indigo-600 text-white rounded-xl shadow-md active:scale-95 transition-all"><div className="flex items-center gap-2 pl-1"><History size={16} /><span className="font-black text-[12px] uppercase">Ledger & Billing</span></div>{showLedgerInModal ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}</button>
-                      {showLedgerInModal && (
-                        <div className="mt-1 space-y-2 max-h-[350px] overflow-y-auto pr-1">
-                          {getPaymentSchedule(formData).map((mon, idx) => (
-                            <div key={idx} className="bg-slate-50 border border-slate-300 rounded-[1.5rem] p-2 space-y-2 shadow-sm">
-                              <div className="flex items-center justify-between border-b border-slate-200 pb-1 px-1">
-                                <span className="text-[13px] font-black uppercase text-indigo-600 min-w-[45px]">{mon.label}</span>
-                                <div className="flex gap-2 text-[15px] font-black whitespace-nowrap overflow-x-auto hide-scrollbar">
-                                  <span className="text-slate-400 text-[11px]">RENT: <span className="text-slate-800 font-bold">{mon.rent.toLocaleString()}</span></span>
-                                  <span className="text-slate-400 text-[11px]">UTIL: <span className="text-slate-800 font-bold">{mon.utilOwed.toLocaleString()}</span></span>
-                                  <span className="text-slate-400 text-[11px]">Σ <span className="text-slate-800 font-black">{mon.owed.toLocaleString()}</span></span>
-                                  <span className="text-slate-400 text-[11px]">BAL: <span className={mon.paid >= mon.owed ? 'text-emerald-600 underline decoration-2' : 'text-rose-600 underline decoration-2'}>{(mon.owed - mon.paid).toLocaleString()}</span></span>
-                                </div>
-                              </div>
-                              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-2 shadow-inner">
-                                <div className="grid grid-cols-5 gap-1.5 items-center">
-                                  <div className="col-span-1 flex items-center gap-1"><Zap size={16} className="text-amber-500"/><span className="text-[13px] font-black text-slate-500 uppercase">ELEC</span></div>
-                                  <input type="number" onInput={handleNumInput} placeholder="In" className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-center outline-none" value={mon.util.elecStart} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'elecStart', e.target.value)} />
-                                  <input type="number" onInput={handleNumInput} placeholder="Out" className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-center outline-none" value={mon.util.elecEnd} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'elecEnd', e.target.value)} />
-                                  <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-1 justify-center border border-slate-200"><span className="text-[13px] font-black text-slate-400">@</span><input type="number" onInput={handleNumInput} className="w-8 bg-transparent text-[13px] font-bold text-center outline-none border-none" value={mon.util.elecRate} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'elecRate', e.target.value)} /></div>
-                                  <div className="text-right font-black text-[13px] text-amber-600">{Math.round((mon.util.elecEnd - mon.util.elecStart) * mon.util.elecRate)}฿</div>
-                                </div>
-                                <div className="grid grid-cols-5 gap-1.5 items-center border-t border-slate-100 pt-1.5">
-                                  <div className="col-span-1 flex items-center gap-1"><Droplets size={16} className="text-blue-500"/><span className="text-[13px] font-black text-slate-500 uppercase">WATER</span></div>
-                                  <div className="col-span-3 relative px-1"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] font-bold text-slate-300">฿</span><input type="number" onInput={handleNumInput} className="w-full bg-slate-50 rounded-lg p-1.5 pl-6 text-[13px] font-bold outline-none border-none" value={mon.util.water} onChange={e=>updateUtility(editingId, mon.monthIndex, mon.year, 'water', e.target.value)} /></div>
-                                  <div className="text-right font-black text-[14px] text-slate-500 uppercase tracking-tighter">Σ {mon.utilOwed}</div>
-                                </div>
-                              </div>
-                              <div className="space-y-1 px-0.5">
-                                {mon.payments.map((p, pIdx) => (
-                                  <div key={pIdx} className="flex gap-2 items-center bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
-                                    <input type="date" className="bg-transparent text-[12px] font-bold text-slate-500 w-32 border-none outline-none" value={p.date} onChange={(e) => updatePayment(editingId, mon.monthIndex, mon.year, pIdx, 'date', e.target.value)} />
-                                    <div className="flex-1 flex items-center gap-1 border-l border-slate-200 pl-2"><span className="text-[13px] text-emerald-600 font-bold">฿</span><input type="number" onInput={handleNumInput} className="flex-1 bg-transparent text-[13px] font-black text-emerald-700 border-none outline-none" value={p.amount} onChange={(e) => updatePayment(editingId, mon.monthIndex, mon.year, pIdx, 'amount', e.target.value)} /></div>
-                                    <button type="button" onClick={() => removePayLocal(editingId, mon.monthIndex, mon.year, pIdx)} className="text-slate-300 hover:text-rose-500 p-1"><Trash size={16}/></button>
-                                  </div>
-                                ))}
-                                <div className="flex gap-2 pt-0.5">
-                                  <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-black text-slate-300">฿</span><input type="number" onInput={handleNumInput} id={`pay-${idx}`} className="w-full bg-white border border-slate-300 rounded-xl p-2 pl-7 text-[14px] font-black outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" placeholder="Add pay..." defaultValue={Math.round(mon.owed - mon.paid) > 0 ? Math.round(mon.owed - mon.paid) : ''} onKeyDown={(e) => { if (e.key === 'Enter') { addPayLocal(editingId, mon.monthIndex, mon.year, e.target.value); e.target.value = ''; }}} /></div>
-                                  <button type="button" onClick={() => { const input = document.getElementById(`pay-${idx}`); addPayLocal(editingId, mon.monthIndex, mon.year, input.value); input.value = ''; }} className="bg-slate-900 text-white p-2 rounded-xl shadow-md transition-all active:scale-90"><PlusCircle size={22}/></button>
-                                </div>
-                              </div>
+                            <div className="flex items-center gap-2 pr-1">
+                                <span className="text-[10px] font-black text-slate-400 uppercase">Property:</span>
+                                <select className="bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-black text-indigo-700 outline-none cursor-pointer" value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)}>
+                                    <option value="All">All View</option>
+                                    {properties.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
                             </div>
-                          ))}
                         </div>
-                      )}
+
+                        {/* TAB CONTENTS */}
+                        {activeTab === 'calendar' ? (
+                            <div className="space-y-1 animate-in fade-in duration-300">
+                                {/* LINE 2: LOCAL CONTROLS */}
+                                <div className="flex flex-wrap items-center justify-between px-2 py-0.5">
+                                    <div className="flex items-center gap-2 bg-white/60 border border-slate-300 px-3 py-1.5 rounded-xl shadow-sm">
+                                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><Icon name="Home" size={13} className="text-emerald-500" /> IN</div>
+                                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><Icon name="Clock" size={13} className="text-blue-500" /> FUT</div>
+                                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> OUT</div>
+                                        <div className="w-px h-3 bg-slate-300 mx-1" />
+                                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> PAID</div>
+                                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase"><div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" /> OWES</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center bg-white p-0.5 rounded-xl gap-0.5 border border-slate-300 shadow-sm">
+                                            <button onClick={() => setViewDate(new Date(year, month-1, 1))} className="p-0.5 hover:bg-slate-50 rounded"><Icon name="ChevronLeft" size={18}/></button>
+                                            <span className="font-black px-2 min-w-[95px] text-center text-[12px] uppercase">{getMonthYearShort(viewDate)}</span>
+                                            <button onClick={() => setViewDate(new Date(year, month+1, 1))} className="p-0.5 hover:bg-slate-50 rounded"><Icon name="ChevronRight" size={18}/></button>
+                                        </div>
+                                        <button onClick={() => { setEditingId(null); setFormData({guestName:'', contact:'', room: (filteredRooms[0]?.name || ''), property: (selectedProperty === 'All' ? properties[0] : selectedProperty), start:'', end:'', monthlyRate: 5000, isFixedPrice: false, manualStatus:'auto'}); setShowModal(true); }} className="bg-indigo-600 text-white px-4 py-1.5 rounded-xl font-black text-[12px] uppercase shadow-md active:scale-95 flex items-center gap-1"><Icon name="Plus" size={16} /> NEW</button>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-2xl shadow-xl border border-slate-400 overflow-hidden relative">
+                                    <div className="overflow-x-auto">
+                                        <div className="min-w-[1000px] relative">
+                                            <div className="grid border-b border-slate-400 bg-slate-50" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)` }}>
+                                                <div className="p-1 font-black text-slate-400 text-[12px] uppercase border-r border-slate-400 sticky left-0 z-40 bg-slate-50 text-center flex items-center justify-center">Unit</div>
+                                                {Array.from({length: daysInMonth}).map((_,i) => (
+                                                    <div key={i} className={`py-1 text-center border-r border-slate-300 ${isTodayVisible && (i+1) === todayDay ? 'bg-indigo-50' : ''}`}><span className="text-[12px] text-slate-400 font-bold block uppercase opacity-50 leading-none">{new Date(year, month, i+1).toLocaleDateString('en',{weekday:'short'}).charAt(0)}</span><span className={`text-[12px] font-black mt-1 ${isTodayVisible && (i+1) === todayDay ? 'text-indigo-600 underline' : 'text-slate-700'}`}>{i+1}</span></div>
+                                                ))}
+                                            </div>
+                                            {filteredRooms.map(r => (
+                                                <div key={r.id} className="grid border-b border-slate-400 last:border-0 relative group" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)`, minHeight: '42px' }}>
+                                                    <div className="p-1 sticky left-0 z-20 bg-white border-r border-slate-400 flex items-center justify-center shadow-[2px_0_5px_rgba(0,0,0,0.05)]"><input className="w-full bg-transparent text-center font-black text-[12px] text-slate-600 uppercase tracking-tighter focus:bg-slate-100 outline-none rounded" value={r.name} onChange={(e) => { const n = rooms.map(x=>x.id===r.id?{...x, name:e.target.value}:x); setRooms(n); sync({rooms:n}); }} /></div>
+                                                    {Array.from({length: daysInMonth}).map((_,i) => (<div key={i} onClick={() => { const d = toISODate(new Date(year, month, i+1, 12)); setEditingId(null); setFormData({guestName:'', contact:'', room: r.name, property: r.property, start: d, end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto'}); setShowModal(true); }} className="border-r border-slate-300 last:border-0 cursor-cell hover:bg-slate-50 transition-colors" />))}
+                                                    {filteredBookings.filter(b => b.room === r.name).map(booking => {
+                                                        const sch = getPaymentSchedule(booking).find(s => s.monthIndex === month && s.year === year);
+                                                        const bal = sch ? Math.round(sch.owed - sch.paid) : 0;
+                                                        const s = getStatus(booking);
+                                                        const bS = new Date(booking.start), bE = new Date(booking.end), mS = new Date(year, month, 1), mE = new Date(year, month, daysInMonth);
+                                                        if (bE <= mS || bS > mE) return null;
+                                                        const dS = Math.max(1, bS.getMonth() === month && bS.getFullYear() === year ? bS.getDate() : 1);
+                                                        const dE = Math.min(daysInMonth, bE.getMonth() === month && bE.getFullYear() === year ? bE.getDate() : daysInMonth);
+                                                        return (
+                                                            <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1 border border-white/20 flex items-center px-2 z-10 transition-all hover:scale-[1.01] cursor-pointer shadow-md ${getBarColor(booking, bal)} ${bS < mS ? 'rounded-l-none' : 'rounded-xl'} ${bE > mE ? 'rounded-r-none' : 'rounded-xl'}`} style={{ gridColumnStart: dS+1, gridColumnEnd: dE+2, left: bS < mS ? 0 : '1px', right: bE > mE ? 0 : '1px' }}>
+                                                                <div className="flex items-center gap-1.5 w-full text-white whitespace-nowrap overflow-hidden font-black text-[13px] tracking-tight uppercase">
+                                                                    <div className={`w-3 h-3 rounded-full border border-white/40 shrink-0 ${bal <= 0 ? 'bg-emerald-400' : 'bg-rose-100 animate-pulse'}`} />
+                                                                    <Icon name={s.icon} size={13} className="shrink-0 opacity-90" />
+                                                                    <span className="truncate">{booking.guestName}</span>
+                                                                    <span className="opacity-40">|</span>
+                                                                    <span>{bal > 0 ? bal.toLocaleString() : "✓"}</span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : activeTab === 'reminders' ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-2 animate-in slide-in-from-bottom duration-300">
+                                <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
+                                    <h3 className="text-rose-600 font-black text-[13px] uppercase mb-3 flex items-center gap-2"><Icon name="AlertTriangle" size={16}/> Overdue</h3>
+                                    <div className="space-y-2">
+                                        {[...remindersData.overdue, ...remindersData.billOverdue].map((r, i) => (
+                                            <div key={i} className="bg-rose-50 p-2 rounded-xl border border-rose-100 flex justify-between items-center">
+                                                <div><p className="text-[14px] font-black text-rose-900">{r.guest || r.title}</p><p className="text-[11px] font-bold text-rose-500 uppercase">{r.room || r.date}</p></div>
+                                                <div className="text-right text-rose-600 font-black text-[15px]">{r.amt.toLocaleString()} ฿</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
+                                    <h3 className="text-indigo-600 font-black text-[13px] uppercase mb-3 flex items-center gap-2"><Icon name="Wallet" size={16}/> Balances</h3>
+                                    <div className="space-y-2">
+                                        {remindersData.current.map((r, i) => (
+                                            <div key={i} className="bg-slate-50 p-2 rounded-xl border border-slate-200 flex justify-between items-center">
+                                                <div><p className="text-[14px] font-black text-slate-800">{r.guest}</p><p className="text-[11px] font-bold text-slate-400 uppercase">Unit {r.room}</p></div>
+                                                <div className="text-right text-indigo-600 font-black text-[15px]">{r.amt.toLocaleString()} ฿</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm">
+                                    <h3 className="text-emerald-600 font-black text-[13px] uppercase mb-3 flex items-center gap-2"><Icon name="CalendarClock" size={16}/> Logistics</h3>
+                                    <div className="space-y-2">
+                                        {remindersData.upcoming.map((r, i) => (
+                                            <div key={i} className="bg-emerald-50 p-2 rounded-xl border border-emerald-100"><p className="text-[14px] font-black text-emerald-900">{r.text}</p><p className="text-[11px] font-bold text-emerald-500 uppercase">{r.room} • {r.date}</p></div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : activeTab === 'vacancy' ? (
+                            <div className="bg-white rounded-[2rem] p-6 border border-slate-300 max-w-xl mx-auto shadow-xl animate-in zoom-in">
+                                <h2 className="text-[14px] font-black uppercase mb-4 text-indigo-700 flex items-center gap-2"><Icon name="LayoutDashboard" size={18}/> Vacancy Report</h2>
+                                <div className="space-y-2">
+                                    {vacancies.map((v, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200 group hover:bg-white transition-all shadow-sm">
+                                            <div className="flex items-center gap-1 font-black text-[16px] text-slate-800 tracking-tight">
+                                                <span className="text-indigo-600 w-12 text-center border-r border-slate-200 mr-2">{v.room}</span>
+                                                <span className="ml-1">{formatVacancyDate(v.from)}</span>
+                                                <span className="mx-3 text-slate-300">→</span>
+                                                <span className={v.to ? "text-slate-800" : "text-emerald-600"}>{formatVacancyDate(v.to)}</span>
+                                            </div>
+                                            <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border ${v.to ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>{v.to ? 'Window' : 'Open'}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : activeTab === 'bills' ? (
+                            <div className="space-y-2 p-2 max-w-5xl mx-auto">
+                                <div className="flex items-center justify-between px-2">
+                                    <h2 className="text-[14px] font-black uppercase text-indigo-700 flex items-center gap-2"><Icon name="Receipt" size={18}/> Manage Expenses</h2>
+                                    <button onClick={() => { setEditingBillId(null); setBillFormData({title:'', category:'Electric', property: (selectedProperty === 'All' ? properties[0] : selectedProperty), amount:0, dueDate:toISODate(TODAY), payments:[]}); setShowBillModal(true); }} className="bg-indigo-600 text-white px-4 py-1.5 rounded-xl font-black text-[11px] uppercase shadow-md">+ NEW BILL</button>
+                                </div>
+                                <div className="bg-white rounded-2xl border border-slate-300 overflow-hidden shadow-sm">
+                                    <div className="grid grid-cols-7 gap-2 p-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                        <div className="col-span-2 text-left pl-3">Bill / Property</div>
+                                        <div>Due Date</div>
+                                        <div>Amount</div>
+                                        <div>Balance</div>
+                                        <div className="col-span-2 text-right pr-3">Actions</div>
+                                    </div>
+                                    <div className="divide-y divide-slate-100">
+                                        {filteredBills.map(bill => {
+                                            const Cat = BILL_CATEGORIES.find(c => c.id === bill.category) || BILL_CATEGORIES[7];
+                                            const paid = (bill.payments || []).reduce((s, p) => s + p.amount, 0);
+                                            const bal = bill.amount - paid;
+                                            return (
+                                                <div key={bill.id} className="grid grid-cols-7 gap-2 p-3 items-center hover:bg-slate-50 transition-colors">
+                                                    <div className="col-span-2 flex items-center gap-3">
+                                                        <div className={`p-2 rounded-xl bg-slate-100 ${Cat.color}`}><Icon name={Cat.icon} size={18}/></div>
+                                                        <div><p className="text-[14px] font-black text-slate-800 uppercase">{bill.category === 'Other' ? bill.title : bill.category}</p><p className="text-[10px] font-bold text-slate-400 uppercase">{bill.property}</p></div>
+                                                    </div>
+                                                    <div className="text-[12px] font-black text-slate-600 text-center">{bill.dueDate}</div>
+                                                    <div className="text-[14px] font-black text-slate-800 text-center">{bill.amount.toLocaleString()} ฿</div>
+                                                    <div className="text-center"><span className={`text-[12px] font-black px-2 py-0.5 rounded-lg ${bal <= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{bal > 0 ? `${bal.toLocaleString()} ฿` : 'PAID'}</span></div>
+                                                    <div className="col-span-2 text-right flex justify-end gap-1 pr-1">
+                                                        <button title="Quick Pay All" onClick={() => quickPayBill(bill)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Icon name="Check" size={18}/></button>
+                                                        <button title="Duplicate Next Month" onClick={() => duplicateBill(bill)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><Icon name="Copy" size={18}/></button>
+                                                        <button title="Edit History" onClick={() => { setEditingBillId(bill.id); setBillFormData(bill); setShowBillModal(true); }} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"><Icon name="History" size={18}/></button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="p-2 max-w-4xl mx-auto space-y-4 animate-in fade-in duration-500">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div className="bg-white p-4 rounded-[2rem] border border-slate-300 shadow-sm">
+                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Income ({selectedProperty})</p>
+                                        <h2 className="text-2xl font-black text-emerald-600 mt-1">{accountingData.income.toLocaleString()} ฿</h2>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-[2rem] border border-slate-300 shadow-sm">
+                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Expenses ({selectedProperty})</p>
+                                        <h2 className="text-2xl font-black text-rose-600 mt-1">{accountingData.expense.toLocaleString()} ฿</h2>
+                                    </div>
+                                    <div className="bg-indigo-700 p-4 rounded-[2rem] text-white shadow-xl">
+                                        <p className="text-[11px] font-black text-indigo-300 uppercase tracking-tighter">Net Position</p>
+                                        <h2 className="text-2xl font-black mt-1">{accountingData.net.toLocaleString()} ฿</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modals */}
+                        {showModal && (
+                            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 overflow-y-auto">
+                                <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg border border-slate-300 overflow-hidden animate-in zoom-in duration-200 my-auto">
+                                    <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                                        <div className="flex items-center gap-2 pl-2"><div className={`p-1.5 rounded-xl text-white shadow-sm ${editingId ? 'bg-indigo-600' : 'bg-slate-900'}`}><Icon name="User" size={16} /></div><h2 className="text-[12px] font-black uppercase tracking-widest">{editingId ? 'Profile' : 'New Stay'}</h2></div>
+                                        <button onClick={() => setShowModal(false)} className="p-2 text-slate-400"><Icon name="X" size={24}/></button>
+                                    </div>
+                                    <div className="p-3 space-y-2">
+                                        <form onSubmit={handleSave} className="space-y-2">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <input type="text" required className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none" placeholder="Name" value={formData.guestName} onChange={e=>setFormData({...formData, guestName:e.target.value})} />
+                                                <select className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none" value={formData.property} onChange={e=>setFormData({...formData, property:e.target.value, room: rooms.find(r=>r.property===e.target.value)?.name || ''})}>{properties.map(p => <option key={p} value={p}>{p}</option>)}</select>
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-slate-50 p-2 border border-slate-200 rounded-xl">
+                                                <div className="flex-1 flex items-center gap-2"><span className="text-[12px] font-black text-slate-400 uppercase tracking-tighter">UNIT:</span><select className="bg-transparent font-black text-[14px] text-indigo-600 outline-none" value={formData.room} onChange={e=>setFormData({...formData, room:e.target.value})}>{rooms.filter(r=>r.property===formData.property).map(r=><option key={r.id} value={r.name}>{r.name}</option>)}</select></div>
+                                                <button type="button" onClick={() => setFormData({...formData, isFixedPrice: !formData.isFixedPrice})} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${formData.isFixedPrice ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400'}`}>Fixed Stay</button>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2 pb-1 border-b border-slate-200">
+                                                <div><label className="text-[10px] font-bold text-slate-400 uppercase ml-1">In</label><input type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[13px] font-black outline-none" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
+                                                <div><label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Out</label><input type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[13px] font-black outline-none" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
+                                                <div><label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Rate</label><input type="number" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-1.5 text-[14px] font-black text-indigo-700 outline-none" value={formData.monthlyRate} onChange={e=>setFormData({...formData, monthlyRate:Number(e.target.value)})} /></div>
+                                            </div>
+                                            {editingId && (
+                                                <div className="space-y-1.5">
+                                                    <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-2 bg-indigo-600 text-white rounded-xl shadow-md active:scale-95 transition-all"><div className="flex items-center gap-2 pl-1"><Icon name="History" size={16} /><span className="font-black text-[12px] uppercase">Ledger & Billing</span></div>{showLedgerInModal ? <Icon name="ChevronUp" size={20}/> : <Icon name="ChevronDown" size={20}/>}</button>
+                                                    {showLedgerInModal && (
+                                                        <div className="mt-1 space-y-2 max-h-[350px] overflow-y-auto pr-1">
+                                                            {getPaymentSchedule(formData).map((mon, idx) => {
+                                                                const key = `${editingId}_${mon.monthIndex}_${mon.year}`;
+                                                                return (
+                                                                <div key={idx} className="bg-slate-50 border border-slate-300 rounded-[1.5rem] p-2 space-y-2 shadow-sm">
+                                                                    <div className="flex items-center justify-between border-b border-slate-200 pb-1 px-1"><span className="text-[13px] font-black uppercase text-indigo-600 min-w-[45px]">{mon.label}</span><div className="flex gap-2 text-[15px] font-black whitespace-nowrap overflow-x-auto hide-scrollbar"><span className="text-slate-400 text-[11px]">RENT: <span className="text-slate-800 font-bold">{mon.rent.toLocaleString()}</span></span><span className="text-slate-400 text-[11px]">UTIL: <span className="text-slate-800 font-bold">{mon.utilOwed.toLocaleString()}</span></span><span className="text-slate-400 text-[11px]">Σ <span className="text-slate-800 font-black">{mon.owed.toLocaleString()}</span></span><span className="text-slate-400 text-[11px]">BAL: <span className={mon.paid >= mon.owed ? 'text-emerald-600 underline decoration-2' : 'text-rose-600 underline decoration-2'}>{(mon.owed - mon.paid).toLocaleString()}</span></span></div></div>
+                                                                    <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-2 shadow-inner">
+                                                                        <div className="grid grid-cols-5 gap-1.5 items-center">
+                                                                            <div className="col-span-1 flex items-center gap-1"><Icon name="Zap" size={16} className="text-amber-500"/><span className="text-[13px] font-black text-slate-500 uppercase">ELEC</span></div>
+                                                                            <input type="number" placeholder="In" className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-center outline-none" value={mon.util.elecStart} onChange={e=>{const n = {...utilityLog, [key]: {...(utilityLog[key]||{elecStart:0,elecEnd:0,elecRate:8,water:200}), elecStart: Number(e.target.value)}}; setUtilityLog(n); sync({utilityLog:n});}} />
+                                                                            <input type="number" placeholder="Out" className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-center outline-none" value={mon.util.elecEnd} onChange={e=>{const n = {...utilityLog, [key]: {...(utilityLog[key]||{elecStart:0,elecEnd:0,elecRate:8,water:200}), elecEnd: Number(e.target.value)}}; setUtilityLog(n); sync({utilityLog:n});}} />
+                                                                            <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-1 justify-center border border-slate-200"><span className="text-[13px] font-black text-slate-400">@</span><input type="number" className="w-8 bg-transparent text-[13px] font-bold text-center outline-none" value={mon.util.elecRate} onChange={e=>{const n = {...utilityLog, [key]: {...(utilityLog[key]||{elecStart:0,elecEnd:0,elecRate:8,water:200}), elecRate: Number(e.target.value)}}; setUtilityLog(n); sync({utilityLog:n});}} /></div>
+                                                                            <div className="text-right font-black text-[13px] text-amber-600">{Math.round((mon.util.elecEnd - mon.util.elecStart) * mon.util.elecRate)}฿</div>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-5 gap-1.5 items-center border-t border-slate-100 pt-1.5">
+                                                                            <div className="col-span-1 flex items-center gap-1"><Icon name="Droplets" size={16} className="text-blue-500"/><span className="text-[13px] font-black text-slate-500 uppercase">WATER</span></div>
+                                                                            <div className="col-span-3 relative px-1"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-[12px] font-bold text-slate-300">฿</span><input type="number" className="w-full bg-slate-50 rounded-lg p-1.5 pl-6 text-[13px] font-bold outline-none" value={mon.util.water} onChange={e=>{const n = {...utilityLog, [key]: {...(utilityLog[key]||{elecStart:0,elecEnd:0,elecRate:8,water:200}), water: Number(e.target.value)}}; setUtilityLog(n); sync({utilityLog:n});}} /></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        {(paymentLog[key] || []).map((p, pIdx) => (<div key={pIdx} className="flex gap-2 items-center bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm"><span className="text-[12px] font-black text-slate-400">{p.date}</span><span className="flex-1 text-right font-black text-emerald-600">{p.amount.toLocaleString()} ฿</span><button onClick={()=>{const n={...paymentLog}; n[key].splice(pIdx,1); setPaymentLog(n); sync({paymentLog:n});}}><Icon name="Trash" size={14} className="text-slate-300 hover:text-rose-500"/></button></div>))}
+                                                                        <div className="flex gap-1">
+                                                                            <input type="number" id={`pay-${idx}`} className="flex-1 bg-white border border-slate-300 rounded-lg p-1 text-[13px] font-black outline-none" placeholder="Pay..." defaultValue={Math.round(mon.owed-mon.paid) > 0 ? Math.round(mon.owed-mon.paid) : ''} />
+                                                                            <button type="button" onClick={()=>{const el=document.getElementById(`pay-${idx}`); addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value='';}} className="bg-slate-900 text-white p-2 rounded-lg active:scale-90"><Icon name="Plus" size={16}/></button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )})}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <button type="submit" className="w-full bg-indigo-600 text-white py-3.5 rounded-[1.2rem] font-black text-[13px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Save Changes</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showBillModal && (
+                            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 overflow-y-auto">
+                                <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg border border-slate-300 overflow-hidden my-auto animate-in zoom-in duration-200">
+                                    <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                                        <div className="flex items-center gap-2 pl-2"><div className={`p-1.5 rounded-xl bg-rose-600 text-white shadow-sm ${editingBillId ? 'bg-rose-600' : 'bg-rose-500'}`}><Icon name="FileText" size={16} /></div><h2 className="text-[12px] font-black uppercase tracking-widest">{editingBillId ? 'Edit Bill' : 'New Bill'}</h2></div>
+                                        <button onClick={() => setShowBillModal(false)} className="p-2 text-slate-400"><Icon name="X" size={24}/></button>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        <form onSubmit={handleBillSave} className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <select className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none appearance-none" value={billFormData.category} onChange={e=>setBillFormData({...billFormData, category:e.target.value})}>{BILL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.id}</option>)}</select>
+                                                <select className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none appearance-none" value={billFormData.property} onChange={e=>setBillFormData({...billFormData, property:e.target.value})}>{properties.map(p => <option key={p} value={p}>{p}</option>)}</select>
+                                            </div>
+                                            {billFormData.category === 'Other' && (<input type="text" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none" placeholder="Description" value={billFormData.title} onChange={e=>setBillFormData({...billFormData, title:e.target.value})} />)}
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div><label className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-tighter">Due Date</label><input type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black outline-none" value={billFormData.dueDate} onChange={e=>setBillFormData({...billFormData, dueDate:e.target.value})} /></div>
+                                                <div><label className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-tighter">Amount</label><input type="number" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-[14px] font-black text-rose-600 outline-none" value={billFormData.amount} onChange={e=>setBillFormData({...billFormData, amount:Number(e.target.value)})} /></div>
+                                            </div>
+                                            <div className="space-y-2 border-t pt-2">
+                                                {(billFormData.payments || []).map((p, i) => (<div key={i} className="flex gap-2 items-center bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-sm"><span className="text-[12px] font-black text-slate-400">{p.date}</span><span className="flex-1 text-right font-black text-emerald-600">{p.amount.toLocaleString()} ฿</span><button type="button" onClick={()=>{const n=[...billFormData.payments]; n.splice(i,1); setBillFormData({...billFormData, payments:n});}}><Icon name="Trash" size={14} className="text-slate-300 hover:text-rose-500"/></button></div>))}
+                                                <div className="flex gap-2">
+                                                    <input type="number" id="bill-pay-in" className="flex-1 bg-white border border-slate-300 rounded-xl p-2 text-[14px] font-black outline-none" placeholder="Pay..." />
+                                                    <button type="button" onClick={()=>{
+                                                        const el=document.getElementById('bill-pay-in');
+                                                        const amt=Number(el.value);
+                                                        if(amt>0) setBillFormData({...billFormData, payments: [...(billFormData.payments || []), {amount:amt, date: toISODate(new Date())}]});
+                                                        el.value='';
+                                                    }} className="bg-slate-900 text-white p-2 rounded-xl active:scale-90 transition-all"><Icon name="PlusCircle" size={20}/></button>
+                                                </div>
+                                            </div>
+                                            <button type="submit" className="w-full bg-rose-600 text-white py-3.5 rounded-[1.2rem] font-black text-[13px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Update Bill</button>
+                                            {editingBillId && <button type="button" onClick={async () => { if(confirm('Delete Bill?')) { const n=bills.filter(b=>b.id!==editingBillId); setBills(n); await sync({bills:n}); setShowBillModal(false); } }} className="w-full text-slate-400 font-bold text-[11px] uppercase p-1">Delete Bill</button>}
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                  )}
-                  <div className="flex flex-col gap-1.5 pt-2">
-                    <button type="submit" className="w-full bg-indigo-600 text-white py-3.5 rounded-[1.2rem] font-black text-[13px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Save Profile</button>
-                    {editingId && <button type="button" onClick={async () => { const newB = bookings.filter(b=>b.id!==editingId); setBookings(newB); await sync({ bookings: newB }); setShowModal(false); }} className="w-full py-1 text-rose-500 font-bold text-[12px] uppercase opacity-50 hover:opacity-100 flex items-center justify-center gap-1.5 transition-all"><Trash2 size={16}/> Delete</button>}
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
