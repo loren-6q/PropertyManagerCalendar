@@ -65,15 +65,27 @@
             );
         };
 
-        // --- CONFIG ---
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // --- FIREBASE CONFIG ---
+        // Replacing environment config with your specific project settings
+        const firebaseConfig = {
+            apiKey: "AIzaSyASq1ntgInCnv4ZBL0b1KZxcSTS8HzmcJI",
+            authDomain: "propertycal1.firebaseapp.com",
+            projectId: "propertycal1",
+            storageBucket: "propertycal1.firebasestorage.app",
+            messagingSenderId: "39254504887",
+            appId: "1:39254504887:web:368ca09e2a2b1b46376432"
+        };
+
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'prop-mgr-v2-stable';
+        
+        // Consistent App ID for storage structure
+        const appId = 'prop-mgr-v2-stable';
         const urlParams = new URLSearchParams(window.location.search);
+        // Supports multiple "users" or datasets via URL e.g. ?user=property_a
         const urlUser = urlParams.get('user') || 'default_user';
-        const TODAY = new Date(2026, 2, 21); // March 21, 2026
+        const TODAY = new Date(2026, 2, 21); // Set to March 21, 2026
 
         const BILL_CATEGORIES = [
             { id: 'Lease', icon: 'Building2', color: 'text-indigo-600' },
@@ -138,8 +150,7 @@
             // --- DATABASE ---
             useEffect(() => {
                 const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await auth.signInWithCustomToken(__initial_auth_token);
-                    else await auth.signInAnonymously();
+                    await auth.signInAnonymously().catch(err => console.error("Auth Error", err));
                 };
                 initAuth();
                 const unsub = auth.onAuthStateChanged(setUser);
@@ -148,7 +159,9 @@
 
             useEffect(() => {
                 if (!user) return;
+                // Rule 1: Using strict path /artifacts/{appId}/public/data/{collectionName}/{docId}
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser);
+                
                 const unsub = docRef.onSnapshot((snap) => {
                     if (snap.exists) {
                         const d = snap.data();
@@ -161,6 +174,7 @@
                     } else {
                         const initR = Array.from({ length: 12 }, (_, i) => ({ id: `r${i}`, name: `${101 + i}`, property: 'Property A' }));
                         setRooms(initR);
+                        // Save initial state
                         docRef.set({ rooms: initR, properties: ['Property A', 'Property B'], bookings: [], paymentLog: {}, utilityLog: {}, bills: [] });
                     }
                     setHasLoaded(true);
@@ -169,7 +183,7 @@
             }, [user]);
 
             const sync = async (update) => {
-                if (!user || !hasLoaded) return;
+                if (!user || !hasLoaded) return; // Prevent overwriting with empty state before load completes
                 try {
                     await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser).set(update, { merge: true });
                 } catch (err) {
