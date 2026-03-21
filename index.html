@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- 3. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 4. Firebase Compat SDKs -->
+    <!-- 4. Firebase Compat SDKs (Stable for single-file persistence) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -23,8 +23,9 @@
         const { useState, useMemo, useEffect, useRef, Fragment } = React;
 
         // --- 1. FIREBASE CONFIGURATION ---
+        // REPLACE THE STRING BELOW WITH YOUR NEW RESTRICTED KEY
         const myGithubConfig = {
-            apiKey: "AIzaSyASq1ntgInCnv4ZBL0b1KZxcSTS8HzmcJI", 
+            apiKey: "AIzaSyDMRFjWxPgQ-RUe45OV5wPTShmS8zHysqI", 
             authDomain: "propertycal1.firebaseapp.com",
             projectId: "propertycal1",
             storageBucket: "propertycal1.firebasestorage.app",
@@ -147,7 +148,7 @@
                 return `${d.getDate()}${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(d).toUpperCase()}${d.getFullYear().toString().slice(-2)}`;
             };
 
-            // --- 3. PERSISTENCE ENGINE WITH DIAGNOSTICS ---
+            // --- 3. PERSISTENCE ENGINE ---
             useEffect(() => {
                 const init = async () => {
                     try {
@@ -201,7 +202,7 @@
                 }
             };
 
-            // --- 4. RENT & STATUS LOGIC ---
+            // --- 4. LOGIC ---
             const getStatus = (b) => {
                 if (b.manualStatus === 'checked-in') return STAY_STATUSES.IN;
                 if (b.manualStatus === 'checked-out') return STAY_STATUSES.OUT;
@@ -440,7 +441,7 @@
                                     </div>
                                 </div>
                                 <div className="bg-white rounded-2xl p-4 border border-slate-300 shadow-sm text-emerald-600">
-                                    <h3 className="font-black text-[13px] uppercase mb-3 flex items-center gap-2"><Icon name="CalendarClock" size={16}/> Logistics</h3>
+                                    <h3 className="font-black text-[13px] uppercase mb-3 flex items-center gap-2"><Icon name="Clock" size={16}/> Logistics</h3>
                                     <div className="space-y-2">
                                         {filteredBookings.map(b => {
                                             const s = new Date(b.start), e = new Date(b.end);
@@ -526,7 +527,7 @@
                             </div>
                         )}
 
-                        {/* STAY MODAL */}
+                        {/* MODALS */}
                         {showModal && (
                             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 overflow-y-auto">
                                 <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden my-auto animate-in zoom-in duration-200">
@@ -556,7 +557,7 @@
                                             <div><label className="text-[10px] font-black text-slate-400 uppercase ml-2">In</label><input type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-black text-[14px]" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
                                             <div><label className="text-[10px] font-black text-slate-400 uppercase ml-2">Out</label><input type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-black text-[14px]" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
                                         </div>
-                                        
+
                                         {/* RENT COST FIELDS */}
                                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
                                             <div className="flex flex-col">
@@ -577,8 +578,35 @@
                                                 ))}
                                             </div>
                                         </div>
+                                        {editingId && (
+                                            <div className="border-t border-slate-100 pt-3">
+                                                <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-3 bg-indigo-600 text-white rounded-xl shadow-lg active:scale-95 transition-all">
+                                                    <div className="flex items-center gap-2 font-black text-[12px] uppercase"><Icon name="History" size={16} /><span>Ledger & Billing</span></div>
+                                                    <Icon name={showLedgerInModal ? "ChevronUp" : "ChevronDown"} size={20}/>
+                                                </button>
+                                                {showLedgerInModal && (
+                                                    <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
+                                                        {getPaymentSchedule(formData).map((mon, idx) => {
+                                                            const key = `${editingId}_${mon.monthIndex}_${mon.year}`;
+                                                            return (
+                                                                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2 shadow-sm">
+                                                                    <div className="flex justify-between items-center text-[12px] font-black uppercase border-b border-slate-200 pb-2">
+                                                                        <span className="text-indigo-600">{mon.label} {mon.year}</span>
+                                                                        <span className={mon.paid >= mon.owed ? 'text-emerald-600' : 'text-rose-600'}>Owed: ฿{(mon.owed-mon.paid).toLocaleString()}</span>
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <input type="number" id={`pay-${idx}`} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-[14px] font-black outline-none" placeholder="฿ amount" />
+                                                                        <button type="button" onClick={()=>{const el=document.getElementById(`pay-${idx}`); addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value='';}} className="bg-slate-900 text-white p-2.5 rounded-xl active:scale-90 transition-all"><Icon name="PlusCircle" size={20}/></button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                         <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-indigo-700 transition-all">Update Database</button>
-                                        {editingId && <button type="button" onClick={async () => { if(confirm('Delete stay?')) { const n=bookings.filter(b=>b.id!==editingId); setBookings(n); await sync({bookings:n}); setShowModal(false); } }} className="w-full text-slate-300 font-bold text-[10px] uppercase mt-2 hover:text-rose-500 transition-colors">Delete Permanently</button>}
+                                        {editingId && <button type="button" onClick={async () => { if(confirm('Delete stay record?')) { const n=bookings.filter(b=>b.id!==editingId); setBookings(n); await sync({bookings:n}); setShowModal(false); } }} className="w-full text-slate-300 font-bold text-[10px] uppercase mt-2 hover:text-rose-500 transition-colors">Delete Permanently</button>}
                                     </form>
                                 </div>
                             </div>
@@ -637,7 +665,7 @@
                             </div>
                         )}
 
-                        {/* DIAGNOSTIC PANEL (Bottom Fixed) */}
+                        {/* DIAGNOSTIC PANEL */}
                         <div className="fixed bottom-0 inset-x-0 bg-slate-900 text-white text-[10px] p-2 flex gap-4 items-center justify-center border-t border-white/10 z-[200]">
                             <div className="flex items-center gap-1.5">
                                 <div className={`w-2 h-2 rounded-full ${dbStatus.auth.includes('Connected') ? 'bg-emerald-500' : 'bg-rose-500'}`} />
@@ -656,7 +684,6 @@
                                 </div>
                             )}
                         </div>
-
                     </div>
                 </div>
             );
