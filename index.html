@@ -101,7 +101,7 @@
             const [properties, setProperties] = useState(['Property A', 'Property B']);
 
             const [showModal, setShowModal] = useState(false);
-            const [showPropSettings, setShowPropSettings] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
             const [editingId, setEditingId] = useState(null);
             const [showLedgerInModal, setShowLedgerInModal] = useState(false);
             const [formData, setFormData] = useState({ 
@@ -164,13 +164,17 @@
                         docRef.set({ rooms: initR, properties: ['Property A', 'Property B'], bookings: [], paymentLog: {}, utilityLog: {}, bills: [] });
                     }
                     setHasLoaded(true);
-                });
+                }, (err) => console.error("Firestore Snapshot Error:", err));
                 return unsub;
             }, [user]);
 
             const sync = async (update) => {
                 if (!user || !hasLoaded) return;
-                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser).set(update, { merge: true });
+                try {
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser).set(update, { merge: true });
+                } catch (err) {
+                    console.error("Firestore Sync Error:", err);
+                }
             };
 
             // --- CALCULATIONS ---
@@ -311,7 +315,7 @@
             }, [filteredBookings, filteredBills]);
 
             return (
-                <div className="min-h-screen text-slate-900 bg-slate-100 font-sans p-1">
+                <div className="min-h-screen text-slate-900 bg-slate-100 font-sans p-1 pb-12">
                     <div className="max-w-[1800px] mx-auto">
                         
                         {/* LINE 1: GLOBAL HEADER */}
@@ -341,7 +345,7 @@
                                         <option value="All">All View</option>
                                         {properties.map(p => <option key={p} value={p}>{p}</option>)}
                                     </select>
-                                    <button onClick={() => setShowPropSettings(true)} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><Icon name="Settings" size={14} /></button>
+                                    <button onClick={() => setShowSettings(true)} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><Icon name="Settings" size={14} /></button>
                                 </div>
                             </div>
                         </div>
@@ -382,7 +386,7 @@
                                                     const isToday = isTodayVisible && (i+1) === todayDay;
                                                     return (
                                                         <div key={i} className={`py-1 text-center border-r border-slate-300 relative ${isToday ? 'bg-indigo-600/10' : ''}`}>
-                                                            {isToday && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-indigo-600" />}
+                                                            {isToday && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-indigo-600 animate-pulse" />}
                                                             <span className={`text-[11px] font-bold block uppercase opacity-50 leading-none ${isToday ? 'text-indigo-600 opacity-100' : 'text-slate-400'}`}>{new Date(year, month, i+1).toLocaleDateString('en',{weekday:'short'}).charAt(0)}</span>
                                                             <span className={`text-[12px] font-black mt-1 block ${isToday ? 'text-indigo-700' : 'text-slate-700'}`}>{i+1}</span>
                                                         </div>
@@ -392,8 +396,11 @@
 
                                             {/* GRID ROWS */}
                                             {filteredRooms.map(r => (
-                                                <div key={r.id} className="grid border-b border-slate-300 last:border-0 relative group min-h-[46px]" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)` }}>
-                                                    <div className="p-1 sticky left-0 z-30 bg-white border-r-2 border-slate-400 flex items-center justify-center shadow-[4px_0_10px_rgba(0,0,0,0.05)]"><input className="w-full bg-transparent text-center font-black text-[12px] text-slate-600 uppercase tracking-tighter focus:bg-slate-100 outline-none rounded" value={r.name} onChange={(e) => { const n = rooms.map(x=>x.id===r.id?{...x, name:e.target.value}:x); setRooms(n); sync({rooms:n}); }} /></div>
+                                                <div key={r.id} className="grid border-b border-slate-300 last:border-0 relative group min-h-[48px]" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, 1fr)` }}>
+                                                    <div className="p-1 sticky left-0 z-30 bg-white border-r-2 border-slate-400 flex flex-col items-center justify-center shadow-[4px_0_10px_rgba(0,0,0,0.05)]">
+                                                        <span className="font-black text-[12px] text-slate-600 uppercase tracking-tighter">{r.name}</span>
+                                                        <span className="text-[8px] font-bold text-slate-300 uppercase leading-none mt-0.5">{r.property.split(' ').pop()}</span>
+                                                    </div>
                                                     
                                                     {/* GRID CELLS */}
                                                     {Array.from({length: daysInMonth}).map((_,i) => {
@@ -402,7 +409,7 @@
                                                             <div 
                                                                 key={i} 
                                                                 onClick={() => { const d = toISODate(new Date(year, month, i+1, 12)); setEditingId(null); setFormData({guestName:'', contact:'', room: r.name, property: r.property, start: d, end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto'}); setShowModal(true); }} 
-                                                                className={`border-r border-slate-200 last:border-0 cursor-cell hover:bg-slate-50 transition-colors ${isToday ? 'bg-indigo-600/5' : ''}`} 
+                                                                className={`border-r border-slate-200 last:border-0 cursor-cell hover:bg-slate-50 transition-colors ${isToday ? 'bg-indigo-600/5 border-x border-indigo-200/30' : ''}`} 
                                                             />
                                                         );
                                                     })}
@@ -672,31 +679,72 @@
                             </div>
                         )}
 
-                        {showPropSettings && (
-                            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2">
-                                <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm border border-slate-300 overflow-hidden animate-in zoom-in duration-200">
+                        {showSettings && (
+                            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 overflow-y-auto">
+                                <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg border border-slate-300 overflow-hidden animate-in zoom-in duration-200 my-auto">
                                     <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                                        <h2 className="text-[12px] font-black uppercase tracking-widest pl-2">Property Names</h2>
-                                        <button onClick={() => setShowPropSettings(false)} className="p-2 text-slate-400"><Icon name="X" size={24}/></button>
+                                        <h2 className="text-[14px] font-black uppercase tracking-widest pl-2">System Settings</h2>
+                                        <button onClick={() => setShowSettings(false)} className="p-2 text-slate-400"><Icon name="X" size={24}/></button>
                                     </div>
-                                    <div className="p-4 space-y-3">
-                                        {properties.map((p, i) => (
-                                            <div key={i} className="flex gap-2">
-                                                <input type="text" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-black text-[14px]" value={p} onChange={e => {
-                                                    const n = [...properties]; n[i] = e.target.value; setProperties(n); sync({properties: n});
-                                                }} />
+                                    <div className="p-4 space-y-6 max-h-[70vh] overflow-y-auto">
+                                        {/* Properties Section */}
+                                        <section className="space-y-3">
+                                            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 border-b pb-1">Manage Properties</h3>
+                                            {properties.map((p, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <input type="text" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-black text-[14px]" value={p} onChange={e => {
+                                                        const n = [...properties]; n[i] = e.target.value; setProperties(n); sync({properties: n});
+                                                    }} />
+                                                    <button onClick={() => {
+                                                        if (properties.length > 1 && confirm('Delete Property? All associated units will remain but lose association.')) {
+                                                            const n = properties.filter((_, idx) => idx !== i);
+                                                            setProperties(n); sync({properties: n});
+                                                        }
+                                                    }} className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Icon name="Trash" size={18} /></button>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => {
+                                                const n = [...properties, `Property ${properties.length + 1}`];
+                                                setProperties(n); sync({properties: n});
+                                            }} className="w-full py-2.5 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-[11px] uppercase hover:border-indigo-600 hover:text-indigo-600 transition-all">+ Add Property</button>
+                                        </section>
+
+                                        {/* Units Section */}
+                                        <section className="space-y-3">
+                                            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 border-b pb-1">Manage Units (Associate with Property)</h3>
+                                            <div className="space-y-2">
+                                                {rooms.map((r, i) => (
+                                                    <div key={r.id} className="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-bold text-slate-400">ID:</span>
+                                                            <input type="text" className="bg-white border border-slate-200 rounded-lg p-1.5 font-black text-[12px] flex-1" value={r.name} onChange={e => {
+                                                                const n = rooms.map(x => x.id === r.id ? {...x, name: e.target.value} : x);
+                                                                setRooms(n); sync({rooms: n});
+                                                            }} />
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-bold text-slate-400">PROP:</span>
+                                                            <select className="bg-white border border-slate-200 rounded-lg p-1.5 font-black text-[11px] flex-1" value={r.property} onChange={e => {
+                                                                const n = rooms.map(x => x.id === r.id ? {...x, property: e.target.value} : x);
+                                                                setRooms(n); sync({rooms: n});
+                                                            }}>
+                                                                {properties.map(p => <option key={p} value={p}>{p}</option>)}
+                                                            </select>
+                                                            <button onClick={() => {
+                                                                if (confirm('Delete Unit?')) {
+                                                                    const n = rooms.filter(x => x.id !== r.id);
+                                                                    setRooms(n); sync({rooms: n});
+                                                                }
+                                                            }} className="p-1 text-rose-400 hover:text-rose-600"><Icon name="Trash" size={14} /></button>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                                 <button onClick={() => {
-                                                    if (properties.length > 1 && confirm('Delete Property?')) {
-                                                        const n = properties.filter((_, idx) => idx !== i);
-                                                        setProperties(n); sync({properties: n});
-                                                    }
-                                                }} className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Icon name="Trash" size={18} /></button>
+                                                    const n = [...rooms, { id: `r${Date.now()}`, name: 'New Room', property: properties[0] }];
+                                                    setRooms(n); sync({rooms: n});
+                                                }} className="w-full py-2.5 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-[11px] uppercase hover:border-indigo-600 hover:text-indigo-600 transition-all">+ Add Unit</button>
                                             </div>
-                                        ))}
-                                        <button onClick={() => {
-                                            const n = [...properties, `Property ${properties.length + 1}`];
-                                            setProperties(n); sync({properties: n});
-                                        }} className="w-full py-2.5 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 font-black text-[11px] uppercase hover:border-indigo-600 hover:text-indigo-600 transition-all">+ Add Property</button>
+                                        </section>
                                     </div>
                                 </div>
                             </div>
@@ -709,5 +757,6 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    <script src="https://loren-6q.github.io/WETNav/nav.js"></script>
 </body>
 </html>
