@@ -11,10 +11,10 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- 3. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 4. Firebase Compat SDKs (Reverting to high-stability compat) -->
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    <!-- 4. Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 antialiased overflow-x-hidden font-sans text-slate-900">
     <div id="root"></div>
@@ -32,7 +32,6 @@
             appId: "1:39254504887:web:368ca09e2a2b1b46376432"
         };
 
-        // Strict environment and ID mapping
         const isCanvas = typeof __firebase_config !== 'undefined';
         const firebaseConfig = isCanvas ? JSON.parse(__firebase_config) : myGithubConfig;
         const appId = isCanvas ? (typeof __app_id !== 'undefined' ? __app_id : 'prop-mgr-stable-v2') : 'prop-mgr-stable-v2';
@@ -45,7 +44,7 @@
         const urlUser = urlParams.get('user') || 'manager_main';
         const TODAY = new Date(2026, 2, 21);
 
-        // --- 2. CONSTANTS ---
+        // --- 2. STATUS DEFINITIONS ---
         const STAY_STATUSES = {
             IN: { id: 'checked-in', label: 'In', icon: 'Home', color: 'text-emerald-500', barBg: 'bg-emerald-600' },
             FUT: { id: 'future', label: 'Future', icon: 'Clock', color: 'text-blue-500', barBg: 'bg-blue-600' },
@@ -74,6 +73,8 @@
                 Wallet: <><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>,
                 ChevronRight: <path d="m9 18 6-6-6-6"/>,
+                ChevronUp: <path d="m18 15-6-6-6 6"/>,
+                ChevronDown: <path d="m6 9 6 6 6-6"/>,
                 PlusCircle: <><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></>,
                 Home: <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10"/>,
                 Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
@@ -127,12 +128,11 @@
             const isTodayVisible = TODAY.getFullYear() === year && TODAY.getMonth() === month;
             const todayDay = TODAY.getDate();
 
-            // --- PERSISTENCE ENGINE (STRICT RULE 3: AUTH FIRST) ---
+            // --- 3. PERSISTENCE ENGINE ---
             useEffect(() => {
                 const initAuth = async () => {
                     try {
-                        setDbStatus(s => ({ ...s, auth: 'Authenticating...' }));
-                        // Rule 3: Use custom token if in Canvas, else anonymous
+                        setDbStatus(s => ({ ...s, auth: 'Sign-In...' }));
                         if (isCanvas && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                             const cred = await auth.signInWithCustomToken(__initial_auth_token);
                             setUser(cred.user);
@@ -142,32 +142,34 @@
                         }
                         setDbStatus(s => ({ ...s, auth: `Active: ${auth.currentUser?.uid.slice(0,5)}` }));
                     } catch (e) {
-                        setDbStatus(s => ({ ...s, auth: 'Auth Error', error: e.message }));
+                        setDbStatus(s => ({ ...s, auth: 'Auth Failed', error: e.message }));
                     }
                 };
                 initAuth();
             }, []);
 
             useEffect(() => {
-                // Rule 3 Guard: Wait for auth before querying
                 if (!user) return;
 
-                // Rule 1: Precise Path structure for data persistence
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser);
                 setDbStatus(s => ({ ...s, firestore: 'Connecting...' }));
 
-                const unsub = docRef.onSnapshot((snap) => {
+                return docRef.onSnapshot((snap) => {
                     if (snap.exists) {
                         const d = snap.data();
-                        setBookings(d.bookings || []);
-                        setRooms(d.rooms || []);
+                        
+                        // Sanitize carets from database
+                        const cleanRooms = (d.rooms || []).map(r => ({...r, name: r.name.toString().replace(/\^/g, '')}));
+                        const cleanBookings = (d.bookings || []).map(b => ({...b, room: b.room.toString().replace(/\^/g, '')}));
+                        
+                        setBookings(cleanBookings);
+                        setRooms(cleanRooms);
                         setPaymentLog(d.paymentLog || {});
                         setUtilityLog(d.utilityLog || {});
                         setBills(d.bills || []);
                         setProperties(d.properties || ['Property A', 'Property B']);
                         setDbStatus(s => ({ ...s, firestore: 'Synced ✓' }));
                     } else {
-                        // Initial boilerplate if no data exists
                         const initR = Array.from({ length: 12 }, (_, i) => ({ id: `r${i}`, name: `${101 + i}`, property: 'Property A' }));
                         docRef.set({ rooms: initR, properties: ['Property A', 'Property B'], bookings: [], paymentLog: {}, utilityLog: {}, bills: [] });
                         setDbStatus(s => ({ ...s, firestore: 'Ready (New)' }));
@@ -175,10 +177,8 @@
                     setHasLoaded(true);
                     isReadyToSync.current = true;
                 }, err => {
-                    setDbStatus(s => ({ ...s, firestore: 'Permission Denied', error: err.message }));
+                    setDbStatus(s => ({ ...s, firestore: 'Blocked', error: err.message }));
                 });
-
-                return () => unsub();
             }, [user]);
 
             const sync = async (update) => {
@@ -337,7 +337,7 @@
                                         <div className="flex items-center gap-1"><Icon name="Home" size={13} className="text-emerald-500" /> IN</div>
                                         <div className="flex items-center gap-1"><Icon name="Clock" size={13} className="text-blue-500" /> FUT</div>
                                         <div className="flex items-center gap-1"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> OUT</div>
-                                        <div className="w-px h-3 bg-slate-200 mx-1" />
+                                        <div className="w-px h-3 bg-slate-200" />
                                         <div className="flex items-center gap-1 text-emerald-600"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> PAID</div>
                                         <div className="flex items-center gap-1 text-rose-500"><div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" /> OWES</div>
                                     </div>
@@ -397,7 +397,7 @@
                                                         const endCol = Math.min(daysInMonth, (bE.getMonth() === month && bE.getFullYear() === year ? bE.getDate() : daysInMonth));
                                                         return (
                                                             <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1.5 border border-white/20 flex items-center px-3 z-20 transition-all hover:scale-[1.01] cursor-pointer shadow-md rounded-xl ${getBarColor(booking, bal)}`} style={{ gridColumnStart: startCol+1, gridColumnEnd: endCol+2, left: '1px', right: '1px' }}>
-                                                                <div className="flex items-center gap-2 w-full text-white whitespace-nowrap overflow-hidden font-black text-[13px] tracking-tight uppercase">
+                                                                <div className="flex items-center gap-2 w-full text-white whitespace-nowrap font-black text-[13px] tracking-tight uppercase overflow-hidden">
                                                                     <div className={`w-3 h-3 rounded-full border border-white/40 shrink-0 ${bal <= 0 ? 'bg-emerald-400' : 'bg-rose-100 animate-pulse'}`} />
                                                                     <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
                                                                     <span className="truncate">{booking.guestName}</span>
@@ -474,14 +474,14 @@
                                     {rooms.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric: true})).map((room, i) => {
                                         const roomBookings = bookings.filter(b => b.room === room.name).sort((a,b) => new Date(a.start) - new Date(b.start));
                                         let last = new Date(TODAY);
-                                        const vacancyList = [];
+                                        const vacancy = [];
                                         roomBookings.forEach(b => {
                                             const start = new Date(b.start);
-                                            if (start > last) vacancyList.push({ from: new Date(last), to: new Date(start) });
+                                            if (start > last) vacancy.push({ from: new Date(last), to: new Date(start) });
                                             if (new Date(b.end) > last) last = new Date(b.end);
                                         });
-                                        vacancyList.push({ from: new Date(last), to: null });
-                                        return vacancyList.map((v, idx) => (
+                                        vacancy.push({ from: new Date(last), to: null });
+                                        return vacancy.map((v, idx) => (
                                             <div key={`${i}-${idx}`} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200">
                                                 <div className="flex items-center gap-1 font-black text-[14px] text-slate-800 tracking-tight">
                                                     <span className="text-indigo-600 w-12 text-center border-r border-slate-200 mr-2">{room.name}</span>
@@ -564,7 +564,6 @@
                                             <div><label className="text-[10px] font-black text-slate-400 uppercase ml-2">Out</label><input type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-black text-[14px]" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
                                         </div>
 
-                                        {/* RENT COST FIELDS */}
                                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
                                             <div className="flex flex-col">
                                                 <span className="text-[11px] font-black text-slate-400 uppercase">Monthly Rate:</span>
@@ -582,6 +581,7 @@
                                                 <button key={s} type="button" onClick={() => setFormData({...formData, manualStatus: s})} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${formData.manualStatus === s ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-200 text-slate-400'}`}>{s}</button>
                                             ))}</div>
                                         </div>
+
                                         {editingId && (
                                             <div className="border-t border-slate-100 pt-3">
                                                 <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-3 bg-indigo-600 text-white rounded-xl shadow-lg active:scale-95 transition-all">
