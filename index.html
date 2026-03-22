@@ -11,10 +11,10 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- 3. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 4. Firebase Compat SDKs (Stable for single-file persistence) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- 4. Firebase Compat SDKs (Reverting to high-stability compat) -->
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 antialiased overflow-x-hidden font-sans text-slate-900">
     <div id="root"></div>
@@ -32,9 +32,10 @@
             appId: "1:39254504887:web:368ca09e2a2b1b46376432"
         };
 
+        // Strict environment and ID mapping
         const isCanvas = typeof __firebase_config !== 'undefined';
         const firebaseConfig = isCanvas ? JSON.parse(__firebase_config) : myGithubConfig;
-        const appId = isCanvas ? __app_id : 'prop-mgr-stable-v2';
+        const appId = isCanvas ? (typeof __app_id !== 'undefined' ? __app_id : 'prop-mgr-stable-v2') : 'prop-mgr-stable-v2';
         
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -44,7 +45,7 @@
         const urlUser = urlParams.get('user') || 'manager_main';
         const TODAY = new Date(2026, 2, 21);
 
-        // --- 2. STATUS DEFINITIONS ---
+        // --- 2. CONSTANTS ---
         const STAY_STATUSES = {
             IN: { id: 'checked-in', label: 'In', icon: 'Home', color: 'text-emerald-500', barBg: 'bg-emerald-600' },
             FUT: { id: 'future', label: 'Future', icon: 'Clock', color: 'text-blue-500', barBg: 'bg-blue-600' },
@@ -73,19 +74,11 @@
                 Wallet: <><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>,
                 ChevronRight: <path d="m9 18 6-6-6-6"/>,
-                ChevronUp: <path d="m18 15-6-6-6 6"/>,
-                ChevronDown: <path d="m6 9 6 6 6-6"/>,
                 PlusCircle: <><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></>,
                 Home: <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10"/>,
                 Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
                 CheckCircle2: <><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></>,
                 AlertTriangle: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></>,
-                Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
-                Droplets: <path d="M7 16.3c2.2 0 4-1.8 4-4 0-3.3-4-6.2-4-6.2s-4 2.9-4 6.2c0 2.2 1.8 4 4 4zm10 0c2.2 0 4-1.8 4-4 0-3.3-4-6.2-4-6.2s-4 2.9-4 6.2c0 2.2 1.8 4 4 4z"/>,
-                Wifi: <path d="M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M2 8.82a15 15 0 0 1 20 0M12 20h.01"/>,
-                Sparkles: <path d="m12 3-1.9 5.8a2 2 0 0 1-1.2 1.2L3 12l5.9 1.9a2 2 0 0 1 1.2 1.2l1.9 5.9 1.9-5.9a2 2 0 0 1 1.2-1.2l5.9-1.9-5.9-1.9a2 2 0 0 1-1.2-1.2L12 3z"/>,
-                Wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/>,
-                Users: <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>,
                 History: <><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></>,
                 Trash: <><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></>,
                 Copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
@@ -107,7 +100,7 @@
             const [hasLoaded, setHasLoaded] = useState(false);
             const isReadyToSync = useRef(false);
             
-            const [dbStatus, setDbStatus] = useState({ auth: 'Waiting...', firestore: 'Waiting...', error: null });
+            const [dbStatus, setDbStatus] = useState({ auth: 'Wait...', firestore: 'Wait...', error: null });
 
             const [rooms, setRooms] = useState([]);
             const [bookings, setBookings] = useState([]);
@@ -134,29 +127,36 @@
             const isTodayVisible = TODAY.getFullYear() === year && TODAY.getMonth() === month;
             const todayDay = TODAY.getDate();
 
-            // --- PERSISTENCE ENGINE (Corrected Order) ---
+            // --- PERSISTENCE ENGINE (STRICT RULE 3: AUTH FIRST) ---
             useEffect(() => {
-                const init = async () => {
+                const initAuth = async () => {
                     try {
-                        setDbStatus(s => ({ ...s, auth: 'Sign-In...' }));
-                        // Rule 3: Auth must happen FIRST and be awaited
-                        const cred = await auth.signInAnonymously();
-                        setUser(cred.user);
-                        setDbStatus(s => ({ ...s, auth: `Active: ${cred.user.uid.slice(0,6)}` }));
-                    } catch (e) { 
-                        setDbStatus(s => ({ ...s, auth: 'Auth Failed', error: e.message }));
+                        setDbStatus(s => ({ ...s, auth: 'Authenticating...' }));
+                        // Rule 3: Use custom token if in Canvas, else anonymous
+                        if (isCanvas && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            const cred = await auth.signInWithCustomToken(__initial_auth_token);
+                            setUser(cred.user);
+                        } else {
+                            const cred = await auth.signInAnonymously();
+                            setUser(cred.user);
+                        }
+                        setDbStatus(s => ({ ...s, auth: `Active: ${auth.currentUser?.uid.slice(0,5)}` }));
+                    } catch (e) {
+                        setDbStatus(s => ({ ...s, auth: 'Auth Error', error: e.message }));
                     }
                 };
-                init();
+                initAuth();
             }, []);
 
             useEffect(() => {
+                // Rule 3 Guard: Wait for auth before querying
                 if (!user) return;
-                // Rule 1: Use specific artifacts path structure
+
+                // Rule 1: Precise Path structure for data persistence
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser);
                 setDbStatus(s => ({ ...s, firestore: 'Connecting...' }));
-                
-                return docRef.onSnapshot((snap) => {
+
+                const unsub = docRef.onSnapshot((snap) => {
                     if (snap.exists) {
                         const d = snap.data();
                         setBookings(d.bookings || []);
@@ -165,22 +165,30 @@
                         setUtilityLog(d.utilityLog || {});
                         setBills(d.bills || []);
                         setProperties(d.properties || ['Property A', 'Property B']);
-                        setDbStatus(s => ({ ...s, firestore: 'Synced' }));
+                        setDbStatus(s => ({ ...s, firestore: 'Synced ✓' }));
                     } else {
+                        // Initial boilerplate if no data exists
                         const initR = Array.from({ length: 12 }, (_, i) => ({ id: `r${i}`, name: `${101 + i}`, property: 'Property A' }));
                         docRef.set({ rooms: initR, properties: ['Property A', 'Property B'], bookings: [], paymentLog: {}, utilityLog: {}, bills: [] });
-                        setDbStatus(s => ({ ...s, firestore: 'Ready (New DB)' }));
+                        setDbStatus(s => ({ ...s, firestore: 'Ready (New)' }));
                     }
                     setHasLoaded(true);
                     isReadyToSync.current = true;
                 }, err => {
-                    setDbStatus(s => ({ ...s, firestore: 'Blocked', error: err.message }));
+                    setDbStatus(s => ({ ...s, firestore: 'Permission Denied', error: err.message }));
                 });
+
+                return () => unsub();
             }, [user]);
 
             const sync = async (update) => {
                 if (!user || !isReadyToSync.current) return;
-                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser).set(update, { merge: true });
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser);
+                try {
+                    await docRef.set(update, { merge: true });
+                } catch (e) {
+                    setDbStatus(s => ({ ...s, error: `Sync Fail: ${e.message}` }));
+                }
             };
 
             // --- HELPERS ---
@@ -324,12 +332,12 @@
                         {activeTab === 'calendar' ? (
                             <div className="space-y-1 animate-in fade-in duration-300">
                                 <div className="flex flex-wrap items-center justify-between px-2 py-0.5 gap-2">
-                                    {/* STATUS ICON KEY (LEGEND) */}
+                                    {/* STATUS LEGEND */}
                                     <div className="flex items-center gap-3 bg-white/60 border border-slate-200 px-4 py-1.5 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-tighter shadow-sm">
                                         <div className="flex items-center gap-1"><Icon name="Home" size={13} className="text-emerald-500" /> IN</div>
                                         <div className="flex items-center gap-1"><Icon name="Clock" size={13} className="text-blue-500" /> FUT</div>
                                         <div className="flex items-center gap-1"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> OUT</div>
-                                        <div className="w-px h-3 bg-slate-200" />
+                                        <div className="w-px h-3 bg-slate-200 mx-1" />
                                         <div className="flex items-center gap-1 text-emerald-600"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> PAID</div>
                                         <div className="flex items-center gap-1 text-rose-500"><div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" /> OWES</div>
                                     </div>
@@ -388,7 +396,7 @@
                                                         const startCol = Math.max(1, (bS.getMonth() === month && bS.getFullYear() === year ? bS.getDate() : 1));
                                                         const endCol = Math.min(daysInMonth, (bE.getMonth() === month && bE.getFullYear() === year ? bE.getDate() : daysInMonth));
                                                         return (
-                                                            <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1.5 border border-white/20 flex items-center px-3 z-20 transition-all hover:scale-[1.01] cursor-pointer shadow-md rounded-xl ${s.barBg}`} style={{ gridColumnStart: startCol+1, gridColumnEnd: endCol+2, left: '1px', right: '1px' }}>
+                                                            <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1.5 border border-white/20 flex items-center px-3 z-20 transition-all hover:scale-[1.01] cursor-pointer shadow-md rounded-xl ${getBarColor(booking, bal)}`} style={{ gridColumnStart: startCol+1, gridColumnEnd: endCol+2, left: '1px', right: '1px' }}>
                                                                 <div className="flex items-center gap-2 w-full text-white whitespace-nowrap overflow-hidden font-black text-[13px] tracking-tight uppercase">
                                                                     <div className={`w-3 h-3 rounded-full border border-white/40 shrink-0 ${bal <= 0 ? 'bg-emerald-400' : 'bg-rose-100 animate-pulse'}`} />
                                                                     <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
@@ -466,14 +474,14 @@
                                     {rooms.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric: true})).map((room, i) => {
                                         const roomBookings = bookings.filter(b => b.room === room.name).sort((a,b) => new Date(a.start) - new Date(b.start));
                                         let last = new Date(TODAY);
-                                        const vacancy = [];
+                                        const vacancyList = [];
                                         roomBookings.forEach(b => {
                                             const start = new Date(b.start);
-                                            if (start > last) vacancy.push({ from: new Date(last), to: new Date(start) });
+                                            if (start > last) vacancyList.push({ from: new Date(last), to: new Date(start) });
                                             if (new Date(b.end) > last) last = new Date(b.end);
                                         });
-                                        vacancy.push({ from: new Date(last), to: null });
-                                        return vacancy.map((v, idx) => (
+                                        vacancyList.push({ from: new Date(last), to: null });
+                                        return vacancyList.map((v, idx) => (
                                             <div key={`${i}-${idx}`} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200">
                                                 <div className="flex items-center gap-1 font-black text-[14px] text-slate-800 tracking-tight">
                                                     <span className="text-indigo-600 w-12 text-center border-r border-slate-200 mr-2">{room.name}</span>
@@ -546,16 +554,10 @@
                                         </div>
                                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center gap-3">
                                             <span className="text-[11px] font-black text-slate-400 uppercase shrink-0">Unit:</span>
-                                            <select 
-                                                className="flex-1 bg-transparent font-black text-[14px] text-indigo-700 outline-none" 
-                                                value={formData.room} 
-                                                onChange={e => {
-                                                    const r = rooms.find(x => x.name === e.target.value);
-                                                    setFormData({...formData, room: e.target.value, property: r ? r.property : properties[0]});
-                                                }}
-                                            >
-                                                {rooms.map(r => <option key={r.id} value={r.name}>{r.name} ({r.property})</option>)}
-                                            </select>
+                                            <select className="flex-1 bg-transparent font-black text-[14px] text-indigo-700 outline-none" value={formData.room} onChange={e => {
+                                                const r = rooms.find(x => x.name === e.target.value);
+                                                setFormData({...formData, room: e.target.value, property: r ? r.property : properties[0]});
+                                            }}>{rooms.map(r => <option key={r.id} value={r.name}>{r.name} ({r.property})</option>)}</select>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div><label className="text-[10px] font-black text-slate-400 uppercase ml-2">In</label><input type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-black text-[14px]" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
@@ -668,7 +670,7 @@
                                                     </div>
                                                 </div>
                                             ))}
-                                            <button onClick={() => { const n = [...rooms, { id: `r${Date.now()}`, name: 'NEW', property: properties[0] }]; setRooms(n); sync({rooms: n}); }} className="w-full py-2.5 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-indigo-600 transition-all">+ ADD UNIT</button>
+                                            <button onClick={() => { const n = [...rooms, { id: `r${Date.now()}`, name: 'NEW', property: properties[0] }]; setRooms(n); sync({rooms: n}); }} className="w-full py-2.5 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all">+ ADD UNIT</button>
                                         </section>
                                     </div>
                                 </div>
@@ -706,7 +708,7 @@
                                 <span>{dbStatus.auth}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className={`w-2 h-2 rounded-full ${dbStatus.firestore === 'Synced' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                <div className={`w-2 h-2 rounded-full ${dbStatus.firestore === 'Synced ✓' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                                 <span className="opacity-50">DATA:</span>
                                 <span>{dbStatus.firestore}</span>
                             </div>
