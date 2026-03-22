@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- 3. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 4. Firebase Compat SDKs -->
+    <!-- 4. Firebase Compat SDKs (Stable for single-file persistence) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -73,6 +73,8 @@
                 Wallet: <><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>,
                 ChevronRight: <path d="m9 18 6-6-6-6"/>,
+                ChevronUp: <path d="m18 15-6-6-6 6"/>,
+                ChevronDown: <path d="m6 9 6 6 6-6"/>,
                 PlusCircle: <><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></>,
                 Home: <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10"/>,
                 Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
@@ -132,26 +134,12 @@
             const isTodayVisible = TODAY.getFullYear() === year && TODAY.getMonth() === month;
             const todayDay = TODAY.getDate();
 
-            // --- HELPERS ---
-            const toISODate = (date) => date.toLocaleDateString('sv-SE');
-            const getMonthYearShort = (date) => `${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date).toUpperCase()} ${date.getFullYear()}`;
-            const formatBarDate = (dateStr) => {
-                if (!dateStr) return '...';
-                const d = new Date(dateStr);
-                const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-                return `${d.getDate()}${months[d.getMonth()]}`;
-            };
-            const formatVacancyDate = (date) => {
-                if (!date) return '∞';
-                const d = new Date(date);
-                return `${d.getDate()}${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(d).toUpperCase()}${d.getFullYear().toString().slice(-2)}`;
-            };
-
-            // --- PERSISTENCE ENGINE ---
+            // --- PERSISTENCE ENGINE (Corrected Order) ---
             useEffect(() => {
                 const init = async () => {
                     try {
                         setDbStatus(s => ({ ...s, auth: 'Sign-In...' }));
+                        // Rule 3: Auth must happen FIRST and be awaited
                         const cred = await auth.signInAnonymously();
                         setUser(cred.user);
                         setDbStatus(s => ({ ...s, auth: `Active: ${cred.user.uid.slice(0,6)}` }));
@@ -164,8 +152,10 @@
 
             useEffect(() => {
                 if (!user) return;
+                // Rule 1: Use specific artifacts path structure
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser);
                 setDbStatus(s => ({ ...s, firestore: 'Connecting...' }));
+                
                 return docRef.onSnapshot((snap) => {
                     if (snap.exists) {
                         const d = snap.data();
@@ -193,7 +183,22 @@
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser).set(update, { merge: true });
             };
 
-            // --- RENT & UTILITIES LOGIC ---
+            // --- HELPERS ---
+            const toISODate = (date) => date.toLocaleDateString('sv-SE');
+            const getMonthYearShort = (date) => `${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date).toUpperCase()} ${date.getFullYear()}`;
+            const formatBarDate = (dateStr) => {
+                if (!dateStr) return '...';
+                const d = new Date(dateStr);
+                const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                return `${d.getDate()}${months[d.getMonth()]}`;
+            };
+            const formatVacancyDate = (date) => {
+                if (!date) return '∞';
+                const d = new Date(date);
+                return `${d.getDate()}${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(d).toUpperCase()}${d.getFullYear().toString().slice(-2)}`;
+            };
+
+            // --- LOGIC ---
             const getStatus = (b) => {
                 if (b.manualStatus === 'checked-in') return STAY_STATUSES.IN;
                 if (b.manualStatus === 'checked-out') return STAY_STATUSES.OUT;
@@ -319,7 +324,8 @@
                         {activeTab === 'calendar' ? (
                             <div className="space-y-1 animate-in fade-in duration-300">
                                 <div className="flex flex-wrap items-center justify-between px-2 py-0.5 gap-2">
-                                    <div className="flex items-center gap-3 bg-white/60 border border-slate-200 px-4 py-1.5 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                    {/* STATUS ICON KEY (LEGEND) */}
+                                    <div className="flex items-center gap-3 bg-white/60 border border-slate-200 px-4 py-1.5 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-tighter shadow-sm">
                                         <div className="flex items-center gap-1"><Icon name="Home" size={13} className="text-emerald-500" /> IN</div>
                                         <div className="flex items-center gap-1"><Icon name="Clock" size={13} className="text-blue-500" /> FUT</div>
                                         <div className="flex items-center gap-1"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> OUT</div>
@@ -382,7 +388,7 @@
                                                         const startCol = Math.max(1, (bS.getMonth() === month && bS.getFullYear() === year ? bS.getDate() : 1));
                                                         const endCol = Math.min(daysInMonth, (bE.getMonth() === month && bE.getFullYear() === year ? bE.getDate() : daysInMonth));
                                                         return (
-                                                            <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1.5 border border-white/20 flex items-center px-3 z-20 transition-all hover:scale-[1.01] cursor-pointer shadow-md rounded-xl ${getBarColor(booking, bal)}`} style={{ gridColumnStart: startCol+1, gridColumnEnd: endCol+2, left: '1px', right: '1px' }}>
+                                                            <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1.5 border border-white/20 flex items-center px-3 z-20 transition-all hover:scale-[1.01] cursor-pointer shadow-md rounded-xl ${s.barBg}`} style={{ gridColumnStart: startCol+1, gridColumnEnd: endCol+2, left: '1px', right: '1px' }}>
                                                                 <div className="flex items-center gap-2 w-full text-white whitespace-nowrap overflow-hidden font-black text-[13px] tracking-tight uppercase">
                                                                     <div className={`w-3 h-3 rounded-full border border-white/40 shrink-0 ${bal <= 0 ? 'bg-emerald-400' : 'bg-rose-100 animate-pulse'}`} />
                                                                     <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
@@ -457,17 +463,17 @@
                             <div className="bg-white rounded-[2rem] p-6 border border-slate-300 max-w-xl mx-auto shadow-xl animate-in zoom-in">
                                 <h2 className="text-[14px] font-black uppercase mb-4 text-indigo-700 flex items-center gap-2"><Icon name="LayoutDashboard" size={18}/> Vacancy Report</h2>
                                 <div className="space-y-2">
-                                    {filteredRooms.map((room, i) => {
-                                        const roomBookings = filteredBookings.filter(b => b.room === room.name).sort((a,b) => new Date(a.start) - new Date(b.start));
+                                    {rooms.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric: true})).map((room, i) => {
+                                        const roomBookings = bookings.filter(b => b.room === room.name).sort((a,b) => new Date(a.start) - new Date(b.start));
                                         let last = new Date(TODAY);
-                                        const list = [];
+                                        const vacancy = [];
                                         roomBookings.forEach(b => {
                                             const start = new Date(b.start);
-                                            if (start > last) list.push({ from: new Date(last), to: new Date(start) });
+                                            if (start > last) vacancy.push({ from: new Date(last), to: new Date(start) });
                                             if (new Date(b.end) > last) last = new Date(b.end);
                                         });
-                                        list.push({ from: new Date(last), to: null });
-                                        return list.map((v, idx) => (
+                                        vacancy.push({ from: new Date(last), to: null });
+                                        return vacancy.map((v, idx) => (
                                             <div key={`${i}-${idx}`} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200">
                                                 <div className="flex items-center gap-1 font-black text-[14px] text-slate-800 tracking-tight">
                                                     <span className="text-indigo-600 w-12 text-center border-r border-slate-200 mr-2">{room.name}</span>
@@ -519,7 +525,7 @@
                                     </div>
                                     <div className="bg-indigo-700 p-6 rounded-[2rem] text-white shadow-xl">
                                         <p className="text-[11px] font-black text-indigo-300 uppercase tracking-tighter">Net Position</p>
-                                        <h2 className="text-3xl font-black mt-1">฿{accountingData.net.toLocaleString()}</h2>
+                                        <h2 className="text-3xl font-black mt-1">฿{(accountingData.income - accountingData.expense).toLocaleString()}</h2>
                                     </div>
                                 </div>
                             </div>
@@ -569,14 +575,11 @@
                                         </div>
 
                                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                                            <span className="text-[11px] font-black text-slate-400 uppercase">Status Override:</span>
-                                            <div className="flex gap-1">
-                                                {['auto', 'checked-in', 'checked-out'].map(s => (
-                                                    <button key={s} type="button" onClick={() => setFormData({...formData, manualStatus: s})} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${formData.manualStatus === s ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-200 text-slate-400'}`}>{s}</button>
-                                                ))}
-                                            </div>
+                                            <span className="text-[11px] font-black text-slate-400 uppercase">Override Status:</span>
+                                            <div className="flex gap-1">{['auto', 'checked-in', 'checked-out'].map(s => (
+                                                <button key={s} type="button" onClick={() => setFormData({...formData, manualStatus: s})} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${formData.manualStatus === s ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-200 text-slate-400'}`}>{s}</button>
+                                            ))}</div>
                                         </div>
-
                                         {editingId && (
                                             <div className="border-t border-slate-100 pt-3">
                                                 <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-3 bg-indigo-600 text-white rounded-xl shadow-lg active:scale-95 transition-all">
@@ -593,20 +596,18 @@
                                                                         <span className="text-indigo-600">{mon.label} {mon.year}</span>
                                                                         <span className={mon.paid >= mon.owed ? 'text-emerald-600' : 'text-rose-600'}>Owed: ฿{(mon.owed-mon.paid).toLocaleString()}</span>
                                                                     </div>
-                                                                    
                                                                     <div className="grid grid-cols-2 gap-2">
                                                                         <div>
-                                                                            <label className="text-[9px] font-black text-slate-400 uppercase">Elec Start</label>
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase">Electric Start</label>
                                                                             <input type="number" className="w-full bg-white p-1.5 rounded border border-slate-200 font-black text-[12px]" value={mon.util.elecStart} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecStart', e.target.value)} />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="text-[9px] font-black text-slate-400 uppercase">Elec End</label>
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase">Electric End</label>
                                                                             <input type="number" className="w-full bg-white p-1.5 rounded border border-slate-200 font-black text-[12px]" value={mon.util.elecEnd} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecEnd', e.target.value)} />
                                                                         </div>
                                                                     </div>
-                                                                    
                                                                     <div className="flex gap-2">
-                                                                        <input type="number" id={`pay-${idx}`} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-[14px] font-black outline-none" placeholder="฿ Pay amount..." />
+                                                                        <input type="number" id={`pay-${idx}`} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-[14px] font-black outline-none" placeholder="฿ amount" />
                                                                         <button type="button" onClick={()=>{const el=document.getElementById(`pay-${idx}`); addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value='';}} className="bg-slate-900 text-white p-2.5 rounded-xl active:scale-90 transition-all"><Icon name="PlusCircle" size={20}/></button>
                                                                     </div>
                                                                 </div>
@@ -645,7 +646,7 @@
                                             <button onClick={() => { const n = [...properties, `New Prop`]; setProperties(n); sync({properties: n}); }} className="w-full py-2.5 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-indigo-600 transition-all">+ ADD PROPERTY</button>
                                         </section>
                                         <section className="space-y-2">
-                                            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest border-b pb-1 ml-1">Units (Name & Property)</h3>
+                                            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest border-b pb-1 ml-1">Units</h3>
                                             {rooms.map(r => (
                                                 <div key={r.id} className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 items-center">
                                                     <div className="flex flex-col">
@@ -661,15 +662,13 @@
                                                             <select className="bg-white p-1.5 rounded-lg font-black text-[11px] border border-slate-200" value={r.property} onChange={e => {
                                                                 const n = rooms.map(x => x.id === r.id ? {...x, property: e.target.value} : x);
                                                                 setRooms(n); sync({rooms: n});
-                                                            }}>
-                                                                {properties.map(p => <option key={p} value={p}>{p}</option>)}
-                                                            </select>
+                                                            }}>{properties.map(p => <option key={p} value={p}>{p}</option>)}</select>
                                                         </div>
                                                         <button onClick={() => { if(confirm('Delete unit?')) { const n = rooms.filter(x => x.id !== r.id); setRooms(n); sync({rooms: n}); } }} className="p-2 text-rose-400 hover:bg-rose-50 rounded-xl transition-all"><Icon name="Trash" size={16} /></button>
                                                     </div>
                                                 </div>
                                             ))}
-                                            <button onClick={() => { const n = [...rooms, { id: `r${Date.now()}`, name: 'NEW', property: properties[0] }]; setRooms(n); sync({rooms: n}); }} className="w-full py-2.5 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all">+ ADD UNIT</button>
+                                            <button onClick={() => { const n = [...rooms, { id: `r${Date.now()}`, name: 'NEW', property: properties[0] }]; setRooms(n); sync({rooms: n}); }} className="w-full py-2.5 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-indigo-600 transition-all">+ ADD UNIT</button>
                                         </section>
                                     </div>
                                 </div>
