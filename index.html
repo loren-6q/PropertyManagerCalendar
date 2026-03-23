@@ -206,52 +206,49 @@
 
             const accountingData = useMemo(() => {
                 let totalIncome = 0; let totalExpense = 0;
-                filteredBookings.forEach(b => {
-                    Object.entries(paymentLog).forEach(([key, pays]) => {
-                        if (key.startsWith(b.id)) (pays || []).forEach(p => totalIncome += (Number(p.amount) || 0));
-                    });
-                });
-                filteredBills.forEach(bill => (bill.payments || []).forEach(p => totalExpense += (Number(p.amount) || 0)));
-                
                 const currentMonthLedger = [];
-                filteredBookings.forEach(b => {
-                    Object.entries(paymentLog).forEach(([key, pays]) => {
-                        const parts = key.split('_');
-                        if (key.startsWith(b.id) && parts.length === 3 && parseInt(parts[1]) === month && parseInt(parts[2]) === year) {
-                            (pays || []).forEach(p => currentMonthLedger.push({ date: p.date, label: `${b.guestName} (${b.room})`, amount: p.amount, type: 'IN' }));
+                const historyMap = {};
+
+                const visibleBookingIds = new Set(filteredBookings.map(b => b.id));
+                const bookingLookup = {};
+                filteredBookings.forEach(b => bookingLookup[b.id] = b);
+
+                Object.entries(paymentLog).forEach(([key, pays]) => {
+                    const parts = key.split('_');
+                    if (parts.length === 3) {
+                        const bid = parts[0];
+                        if (visibleBookingIds.has(bid)) {
+                            const b = bookingLookup[bid];
+                            const m = parseInt(parts[1]);
+                            const y = parseInt(parts[2]);
+                            const hKey = `${m}_${y}`;
+                            if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mos[m]} ${y}`, m, y };
+                            (pays || []).forEach(p => {
+                                const amt = Number(p.amount) || 0;
+                                totalIncome += amt;
+                                historyMap[hKey].inc += amt;
+                                if (m === month && y === year) currentMonthLedger.push({ date: p.date, label: `${b.guestName} (${b.room})`, amount: amt, type: 'IN' });
+                            });
                         }
-                    });
+                    }
                 });
                 
                 filteredBills.forEach(bill => {
                     (bill.payments || []).forEach(p => {
+                        const amt = Number(p.amount) || 0;
+                        totalExpense += amt;
                         const d = new Date(p.date);
-                        if (d.getMonth() === month && d.getFullYear() === year) {
-                            currentMonthLedger.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: p.amount, type: 'OUT' });
-                        }
+                        const m = d.getMonth();
+                        const y = d.getFullYear();
+                        const hKey = `${m}_${y}`;
+                        if(!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mos[m]} ${y}`, m, y };
+                        historyMap[hKey].exp += amt;
+                        if (m === month && y === year) currentMonthLedger.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: amt, type: 'OUT' });
                     });
                 });
-
-                const historyMap = {};
-                filteredBookings.forEach(b => {
-                    Object.entries(paymentLog).forEach(([key, pays]) => {
-                        const parts = key.split('_');
-                        if (parts.length === 3) {
-                            const [_, mStr, yStr] = parts;
-                            const hKey = `${mStr}_${yStr}`;
-                            if(!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mos[parts[1]]} ${parts[2]}`, m: parseInt(mStr), y: parseInt(yStr) };
-                            (pays || []).forEach(p => historyMap[hKey].inc += (Number(p.amount) || 0));
-                        }
-                    });
-                });
-                bills.forEach(bill => (bill.payments || []).forEach(p => {
-                    const d = new Date(p.date); const hKey = `${d.getMonth()}_${d.getFullYear()}`;
-                    if(!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mos[d.getMonth()]} ${d.getFullYear()}`, m: d.getMonth(), y: d.getFullYear() };
-                    historyMap[hKey].exp += (Number(p.amount) || 0);
-                }));
 
                 return { income: totalIncome, expense: totalExpense, net: totalIncome - totalExpense, monthLedger: currentMonthLedger.sort((a,b) => new Date(b.date) - new Date(a.date)), history: Object.values(historyMap).sort((a,b) => new Date(b.y, b.m) - new Date(a.y, a.m)).reverse() };
-            }, [filteredBookings, filteredBills, paymentLog, month, year, bills]);
+            }, [filteredBookings, filteredBills, paymentLog, month, year]);
 
             const vacancyReportData = useMemo(() => {
                 return rooms.map(room => {
@@ -462,7 +459,6 @@
                                                                         <div className="flex items-center justify-between w-full text-white whitespace-nowrap font-black text-[13px] tracking-tight uppercase overflow-hidden text-left">
                                                                             <span className="shrink-0 flex items-center gap-1.5 min-w-[30px]">
                                                                                 {!isStart && <span className="text-[10px] opacity-70">← PREV</span>}
-                                                                                {/* Pulsing Status Circles */}
                                                                                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 border border-white/30 ${bal > 0 ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} />
                                                                                 <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
                                                                             </span>
@@ -537,7 +533,6 @@
                                                         <button onClick={() => handleQuickBillDelete(bill.id)} className="p-2 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={18}/></button>
                                                     </div>
                                                 </div>
-                                                {/* Bill Payment History/Ledger - Fully Editable */}
                                                 {showBillLedgerId === bill.id && (
                                                     <div className="bg-slate-50 border-t border-slate-200 p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
                                                         <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 ml-1 font-black">Transaction Logs</p>
@@ -546,24 +541,12 @@
                                                         ) : (
                                                             (bill.payments || []).map(p => (
                                                                 <div key={p.id} className="flex items-center gap-2">
-                                                                    <input 
-                                                                        type="date" 
-                                                                        className="bg-white border rounded-xl px-3 py-1.5 text-[12px] w-36 font-black" 
-                                                                        value={p.date} 
-                                                                        onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'date', e.target.value)} 
-                                                                    />
+                                                                    <input type="date" className="bg-white border rounded-xl px-3 py-1.5 text-[12px] w-36 font-black" value={p.date} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'date', e.target.value)} />
                                                                     <div className="flex-1 relative font-black">
                                                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">฿</span>
-                                                                        <input 
-                                                                            type="number" 
-                                                                            className="w-full bg-white border rounded-xl pl-6 pr-3 py-1.5 text-[13px] font-black" 
-                                                                            value={p.amount} 
-                                                                            onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} 
-                                                                        />
+                                                                        <input type="number" className="w-full bg-white border rounded-xl pl-6 pr-3 py-1.5 text-[13px] font-black" value={p.amount} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} />
                                                                     </div>
-                                                                    <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-400 hover:bg-rose-50 p-2 rounded-xl">
-                                                                        <Icon name="Trash" size={16} />
-                                                                    </button>
+                                                                    <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-400 hover:bg-rose-50 p-2 rounded-xl"><Icon name="Trash" size={16} /></button>
                                                                 </div>
                                                             ))
                                                         )}
@@ -609,13 +592,9 @@
                                         </div>
                                         <div className="bg-slate-50 p-3 rounded-xl border flex justify-between items-center"><div className="flex flex-col"><span className="text-[12px] font-black text-slate-400 uppercase">Rate:</span><input type="number" className="bg-transparent font-black text-[18px] text-indigo-700 outline-none" value={formData.monthlyRate} onChange={e=>setFormData({...formData, monthlyRate: Number(e.target.value)})} /></div><div className="flex items-center gap-2"><span className="text-[12px] font-black text-slate-400 uppercase">Fixed?</span><input type="checkbox" className="w-5 h-5 rounded border-slate-300" checked={formData.isFixedPrice} onChange={e=>setFormData({...formData, isFixedPrice: e.target.checked})} /></div></div>
                                         
-                                        {/* GUEST NOTES MOVED ABOVE LEDGER */}
                                         <div className="border-t pt-3">
                                             <button type="button" onClick={() => setShowNotesInModal(!showNotesInModal)} className="w-full flex items-center justify-between p-3 bg-slate-100 text-slate-600 rounded-xl active:scale-95 transition-all font-black uppercase text-[15px]">
-                                                <div className="flex items-center gap-2 font-black">
-                                                    <Icon name="StickyNote" size={16} />
-                                                    <span>Guest Notes</span>
-                                                </div>
+                                                <div className="flex items-center gap-2 font-black"><Icon name="StickyNote" size={16} /><span>Guest Notes</span></div>
                                                 <Icon name={showNotesInModal ? "ChevronUp" : "ChevronDown"} size={20}/>
                                             </button>
                                             {showNotesInModal && <textarea className="w-full mt-2 bg-slate-50 border rounded-xl p-3 font-bold text-[13px] h-32" placeholder="Guest specific stay notes..." value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})} />}
@@ -624,10 +603,7 @@
                                         {editingId && <Fragment>
                                             <div className="border-t pt-1 font-black">
                                                 <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-3 bg-indigo-600 text-white rounded-xl shadow-lg active:scale-95 transition-all font-black uppercase text-[15px]">
-                                                    <div className="flex items-center gap-2 font-black">
-                                                        <Icon name="History" size={16} />
-                                                        <span>Ledger & Utilities</span>
-                                                    </div>
+                                                    <div className="flex items-center gap-2 font-black"><Icon name="History" size={16} /><span>Ledger & Utilities</span></div>
                                                     <Icon name={showLedgerInModal ? "ChevronUp" : "ChevronDown"} size={20}/>
                                                 </button>
                                                 {showLedgerInModal && <div className="mt-3 space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
@@ -685,6 +661,5 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-       <script src="https://loren-6q.github.io/WETNav/nav.js"></script>
 </body>
 </html>
