@@ -120,7 +120,7 @@
             const [hasLoaded, setHasLoaded] = useState(false);
             const isReadyToSync = useRef(false);
 
-            // Derived Time State (Declared before logic dependencies)
+            // Derived Time State
             const year = viewDate.getFullYear();
             const month = viewDate.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -135,6 +135,7 @@
             const [editingBillId, setEditingBillId] = useState(null);
             const [showLedgerInModal, setShowLedgerInModal] = useState(false);
             const [showNotesInModal, setShowNotesInModal] = useState(false);
+            const [showBillLedgerId, setShowBillLedgerId] = useState(null);
 
             // Form states
             const [formData, setFormData] = useState({ guestName: '', contact: '', room: '', property: '', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '' });
@@ -205,7 +206,6 @@
 
             const accountingData = useMemo(() => {
                 let totalIncome = 0; let totalExpense = 0;
-                // Income summed correctly per relevant booking log (prevents double count)
                 filteredBookings.forEach(b => {
                     Object.entries(paymentLog).forEach(([key, pays]) => {
                         if (key.startsWith(b.id)) (pays || []).forEach(p => totalIncome += (Number(p.amount) || 0));
@@ -270,6 +270,30 @@
                 await docRef.set(update, { merge: true });
             };
 
+            const addPayLocal = async (bid, m, y, amt) => {
+                const key = `${bid}_${m}_${y}`;
+                const newLog = { ...paymentLog, [key]: [...(paymentLog[key] || []), { id: Date.now().toString(), amount: Number(amt), date: toISODate(new Date()) }] };
+                setPaymentLog(newLog); await syncData({ paymentLog: newLog });
+            };
+
+            const updatePayLocal = async (bid, m, y, pid, field, val) => {
+                const key = `${bid}_${m}_${y}`;
+                const newLog = { ...paymentLog, [key]: (paymentLog[key] || []).map(p => p.id === pid ? {...p, [field]: field === 'amount' ? Number(val) : val} : p) };
+                setPaymentLog(newLog); await syncData({ paymentLog: newLog });
+            };
+
+            const deletePayLocal = async (bid, m, y, pid) => {
+                const key = `${bid}_${m}_${y}`;
+                const newLog = { ...paymentLog, [key]: (paymentLog[key] || []).filter(p => p.id !== pid) };
+                setPaymentLog(newLog); await syncData({ paymentLog: newLog });
+            };
+
+            const updateUtilLocal = async (bid, m, y, field, val) => {
+                const key = `${bid}_${m}_${y}`;
+                const newUtil = { ...utilityLog, [key]: { ...(utilityLog[key] || { elecStart: 0, elecEnd: 0, elecRate: 8, water: 0, otherAmt: 0, otherNote: '' }), [field]: field === 'otherNote' ? val : Number(val) } };
+                setUtilityLog(newUtil); await syncData({ utilityLog: newUtil });
+            };
+
             useEffect(() => {
                 const initAuth = async () => {
                     try {
@@ -319,28 +343,23 @@
                 setBills(newBills); syncData({ bills: newBills });
             };
 
+            const handleBillPaymentUpdate = async (billId, paymentId, field, val) => {
+                const newBills = bills.map(b => b.id === billId ? {
+                    ...b,
+                    payments: (b.payments || []).map(p => p.id === paymentId ? { ...p, [field]: field === 'amount' ? Number(val) : val } : p)
+                } : b);
+                setBills(newBills); await syncData({ bills: newBills });
+            };
+
+            const handleBillPaymentDelete = async (billId, paymentId) => {
+                const newBills = bills.map(b => b.id === billId ? { ...b, payments: (b.payments || []).filter(p => p.id !== paymentId) } : b);
+                setBills(newBills); await syncData({ bills: newBills });
+            };
+
             const handleQuickBillDelete = (id) => {
                 if(!confirm('Delete permanently?')) return;
                 const n = bills.filter(b => b.id !== id);
                 setBills(n); syncData({ bills: n });
-            };
-
-            const updatePayLocal = async (bid, m, y, pid, field, val) => {
-                const key = `${bid}_${m}_${y}`;
-                const newLog = { ...paymentLog, [key]: (paymentLog[key] || []).map(p => p.id === pid ? {...p, [field]: field === 'amount' ? Number(val) : val} : p) };
-                setPaymentLog(newLog); await syncData({ paymentLog: newLog });
-            };
-
-            const deletePayLocal = async (bid, m, y, pid) => {
-                const key = `${bid}_${m}_${y}`;
-                const newLog = { ...paymentLog, [key]: (paymentLog[key] || []).filter(p => p.id !== pid) };
-                setPaymentLog(newLog); await syncData({ paymentLog: newLog });
-            };
-
-            const updateUtilLocal = async (bid, m, y, field, val) => {
-                const key = `${bid}_${m}_${y}`;
-                const newUtil = { ...utilityLog, [key]: { ...(utilityLog[key] || { elecStart: 0, elecEnd: 0, elecRate: 8, water: 0, otherAmt: 0, otherNote: '' }), [field]: field === 'otherNote' ? val : Number(val) } };
-                setUtilityLog(newUtil); await syncData({ utilityLog: newUtil });
             };
 
             const duplicateBill = async (bill) => {
@@ -389,7 +408,13 @@
                                     <div className="flex items-center gap-3 bg-white/60 border border-slate-200 px-4 py-1.5 rounded-xl text-[12px] font-black text-slate-400 uppercase tracking-tighter shadow-sm">
                                         <div className="flex items-center gap-1"><Icon name="Home" size={13} className="text-emerald-500" /> IN</div>
                                         <div className="flex items-center gap-1"><Icon name="Clock" size={13} className="text-blue-500" /> FUT</div>
-                                        <div className="flex items-center gap-1 text-emerald-600 font-bold ml-2">PAID ✓</div>
+                                        <div className="flex items-center gap-1"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> OUT</div>
+                                        <div className="flex items-center gap-2 ml-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse border border-white/30" />
+                                            <span>OWES</span>
+                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 ml-1 border border-white/30" />
+                                            <span>PAID</span>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center bg-white p-0.5 rounded-xl border border-slate-300 shadow-sm overflow-hidden">
@@ -435,8 +460,10 @@
                                                                 return (
                                                                     <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1 border border-white/20 flex items-center px-2 z-20 transition-all hover:scale-[1.01] cursor-pointer shadow-md ${getBarColor(booking, bal)} ${isStart ? 'rounded-l-xl' : ''} ${isEnd ? 'rounded-r-xl' : ''}`} style={{ gridColumnStart: startCol+1, gridColumnEnd: endCol+2, left: '1px', right: '1px' }}>
                                                                         <div className="flex items-center justify-between w-full text-white whitespace-nowrap font-black text-[13px] tracking-tight uppercase overflow-hidden text-left">
-                                                                            <span className="shrink-0 flex items-center gap-1 min-w-[30px]">
+                                                                            <span className="shrink-0 flex items-center gap-1.5 min-w-[30px]">
                                                                                 {!isStart && <span className="text-[10px] opacity-70">← PREV</span>}
+                                                                                {/* Pulsing Status Circles */}
+                                                                                <div className={`w-2.5 h-2.5 rounded-full shrink-0 border border-white/30 ${bal > 0 ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} />
                                                                                 <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
                                                                             </span>
                                                                             <div className="flex-1 truncate px-2">{booking.guestName} <span className="opacity-40 font-normal">|</span> {formatBarDate(booking.start)} - {formatBarDate(booking.end)} <span className="opacity-40 font-normal">|</span> ฿{bal.toLocaleString()}</div>
@@ -486,7 +513,64 @@
                                 <div className="bg-white rounded-2xl border border-slate-300 overflow-hidden shadow-sm divide-y divide-slate-100">
                                     {filteredBills.map(bill => {
                                         const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = Number(bill.amount) - paid;
-                                        return ( <div key={bill.id} className="grid grid-cols-6 gap-2 p-4 items-center hover:bg-slate-50 transition-colors font-black text-[15px]"><div className="col-span-2 flex items-center gap-3"><div className={`p-2 rounded-xl ${bal<=0?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}`}><Icon name="Receipt" size={20}/></div><div><p className="uppercase">{bill.category}</p><p className="text-[12px] font-bold text-slate-400 uppercase">{bill.property} • Due {bill.dueDate}</p></div></div><div className="text-[12px] font-black text-slate-400 text-center uppercase">{bal <= 0 ? 'PAID' : `฿${bal.toLocaleString()} DUE`}</div><div className="text-right">฿{bill.amount.toLocaleString()}</div><div className="col-span-2 text-right flex justify-end gap-1">{bal > 0 && <button onClick={() => handleQuickBillPay(bill)} className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Icon name="Check" size={18}/></button>}<button onClick={() => duplicateBill(bill)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><Icon name="Copy" size={18}/></button><button onClick={() => { setEditingBillId(bill.id); setBillFormData({...bill}); setShowBillModal(true); }} className="p-2 text-indigo-400 hover:bg-indigo-50 rounded-lg"><Icon name="Pencil" size={18}/></button><button onClick={() => handleQuickBillDelete(bill.id)} className="p-2 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={18}/></button></div></div> );
+                                        return ( 
+                                            <div key={bill.id} className="flex flex-col font-black">
+                                                <div className="grid grid-cols-6 gap-2 p-4 items-center hover:bg-slate-50 transition-colors text-[15px]">
+                                                    <div className="col-span-2 flex items-center gap-3">
+                                                        <div className={`p-2 rounded-xl ${bal<=0?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}`}>
+                                                            <Icon name="Receipt" size={20}/>
+                                                        </div>
+                                                        <div>
+                                                            <p className="uppercase">{bill.category}</p>
+                                                            <p className="text-[12px] font-bold text-slate-400 uppercase">{bill.property} • Due {bill.dueDate}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-[12px] font-black text-slate-400 text-center uppercase">{bal <= 0 ? 'PAID' : `฿${bal.toLocaleString()} DUE`}</div>
+                                                    <div className="text-right">฿{bill.amount.toLocaleString()}</div>
+                                                    <div className="col-span-2 text-right flex justify-end gap-1">
+                                                        <button onClick={() => setShowBillLedgerId(showBillLedgerId === bill.id ? null : bill.id)} className={`p-2 rounded-lg transition-colors ${showBillLedgerId === bill.id ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400 hover:bg-slate-100'}`}>
+                                                            <Icon name="History" size={18}/>
+                                                        </button>
+                                                        {bal > 0 && <button onClick={() => handleQuickBillPay(bill)} className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg"><Icon name="Check" size={18}/></button>}
+                                                        <button onClick={() => duplicateBill(bill)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><Icon name="Copy" size={18}/></button>
+                                                        <button onClick={() => { setEditingBillId(bill.id); setBillFormData({...bill}); setShowBillModal(true); }} className="p-2 text-indigo-400 hover:bg-indigo-50 rounded-lg"><Icon name="Pencil" size={18}/></button>
+                                                        <button onClick={() => handleQuickBillDelete(bill.id)} className="p-2 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={18}/></button>
+                                                    </div>
+                                                </div>
+                                                {/* Bill Payment History/Ledger - Fully Editable */}
+                                                {showBillLedgerId === bill.id && (
+                                                    <div className="bg-slate-50 border-t border-slate-200 p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 ml-1 font-black">Transaction Logs</p>
+                                                        {(bill.payments || []).length === 0 ? (
+                                                            <p className="text-center text-slate-400 py-2 italic">No payments recorded</p>
+                                                        ) : (
+                                                            (bill.payments || []).map(p => (
+                                                                <div key={p.id} className="flex items-center gap-2">
+                                                                    <input 
+                                                                        type="date" 
+                                                                        className="bg-white border rounded-xl px-3 py-1.5 text-[12px] w-36 font-black" 
+                                                                        value={p.date} 
+                                                                        onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'date', e.target.value)} 
+                                                                    />
+                                                                    <div className="flex-1 relative font-black">
+                                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">฿</span>
+                                                                        <input 
+                                                                            type="number" 
+                                                                            className="w-full bg-white border rounded-xl pl-6 pr-3 py-1.5 text-[13px] font-black" 
+                                                                            value={p.amount} 
+                                                                            onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} 
+                                                                        />
+                                                                    </div>
+                                                                    <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-400 hover:bg-rose-50 p-2 rounded-xl">
+                                                                        <Icon name="Trash" size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
                                     })}
                                 </div>
                             </div>
@@ -524,8 +608,28 @@
                                             <div><label className="text-[10px] uppercase ml-2 text-slate-400">Out</label><input type="date" required className="w-full bg-slate-50 border rounded-xl p-3" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
                                         </div>
                                         <div className="bg-slate-50 p-3 rounded-xl border flex justify-between items-center"><div className="flex flex-col"><span className="text-[12px] font-black text-slate-400 uppercase">Rate:</span><input type="number" className="bg-transparent font-black text-[18px] text-indigo-700 outline-none" value={formData.monthlyRate} onChange={e=>setFormData({...formData, monthlyRate: Number(e.target.value)})} /></div><div className="flex items-center gap-2"><span className="text-[12px] font-black text-slate-400 uppercase">Fixed?</span><input type="checkbox" className="w-5 h-5 rounded border-slate-300" checked={formData.isFixedPrice} onChange={e=>setFormData({...formData, isFixedPrice: e.target.checked})} /></div></div>
+                                        
+                                        {/* GUEST NOTES MOVED ABOVE LEDGER */}
+                                        <div className="border-t pt-3">
+                                            <button type="button" onClick={() => setShowNotesInModal(!showNotesInModal)} className="w-full flex items-center justify-between p-3 bg-slate-100 text-slate-600 rounded-xl active:scale-95 transition-all font-black uppercase text-[15px]">
+                                                <div className="flex items-center gap-2 font-black">
+                                                    <Icon name="StickyNote" size={16} />
+                                                    <span>Guest Notes</span>
+                                                </div>
+                                                <Icon name={showNotesInModal ? "ChevronUp" : "ChevronDown"} size={20}/>
+                                            </button>
+                                            {showNotesInModal && <textarea className="w-full mt-2 bg-slate-50 border rounded-xl p-3 font-bold text-[13px] h-32" placeholder="Guest specific stay notes..." value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})} />}
+                                        </div>
+
                                         {editingId && <Fragment>
-                                            <div className="border-t pt-3 font-black"><button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-3 bg-indigo-600 text-white rounded-xl shadow-lg active:scale-95 transition-all font-black uppercase text-[15px]"><div className="flex items-center gap-2 font-black"><Icon name="History" size={16} /><span>Ledger & Utilities</span></div><Icon name={showLedgerInModal ? "ChevronUp" : "ChevronDown"} size={20}/></button>
+                                            <div className="border-t pt-1 font-black">
+                                                <button type="button" onClick={() => setShowLedgerInModal(!showLedgerInModal)} className="w-full flex items-center justify-between p-3 bg-indigo-600 text-white rounded-xl shadow-lg active:scale-95 transition-all font-black uppercase text-[15px]">
+                                                    <div className="flex items-center gap-2 font-black">
+                                                        <Icon name="History" size={16} />
+                                                        <span>Ledger & Utilities</span>
+                                                    </div>
+                                                    <Icon name={showLedgerInModal ? "ChevronUp" : "ChevronDown"} size={20}/>
+                                                </button>
                                                 {showLedgerInModal && <div className="mt-3 space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
                                                     {getPaymentSchedule(formData).map((mon, idx) => ( <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-3 shadow-sm font-black text-[13px]">
                                                         <div className="flex justify-between items-center uppercase border-b pb-2"><span className="text-indigo-600">{mon.label} {mon.year}</span><span className={mon.owed-mon.paid <= 0 ? 'text-emerald-600' : 'text-rose-600'}>Owed: ฿{(mon.owed-mon.paid).toLocaleString()}</span></div>
@@ -533,11 +637,10 @@
                                                         <div className="flex items-center gap-2 bg-white p-2 rounded-xl border"><Icon name="Zap" size={14} className="text-amber-500" /><input type="number" placeholder="Start" className="w-16 bg-slate-50 rounded px-1.5 py-0.5 text-[12px]" value={mon.util.elecStart} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecStart', e.target.value)} /><input type="number" placeholder="End" className="w-16 bg-slate-50 rounded px-1.5 py-0.5 text-[12px]" value={mon.util.elecEnd} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecEnd', e.target.value)} /><span className="text-slate-300 font-normal">x</span><input type="number" className="w-12 bg-slate-50 rounded px-1.5 py-0.5 text-[12px]" value={mon.util.elecRate} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecRate', e.target.value)} /><span className="ml-auto">฿{mon.electricOwed}</span></div>
                                                         <div className="flex items-center gap-2 bg-white p-2 rounded-xl border"><Icon name="Droplets" size={14} className="text-blue-500" /><input type="number" placeholder="Water" className="w-20 bg-slate-50 rounded px-1.5 py-0.5 text-[12px]" value={mon.util.water} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'water', e.target.value)} /><div className="w-px h-4 bg-slate-100 mx-1" /><input type="number" placeholder="Other" className="w-20 bg-slate-50 rounded px-1.5 py-0.5 text-[12px]" value={mon.util.otherAmt} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'otherAmt', e.target.value)} /><input type="text" placeholder="Note" className="flex-1 bg-slate-50 rounded px-1.5 py-0.5 text-[12px]" value={mon.util.otherNote||''} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'otherNote', e.target.value)} /></div>
                                                         {(paymentLog[`${editingId}_${mon.monthIndex}_${mon.year}`] || []).map(p => ( <div key={p.id} className="flex gap-2 items-center"><input type="date" className="bg-white border rounded px-1.5 py-0.5 text-[12px] w-24" value={p.date} onChange={e => updatePayLocal(editingId, mon.monthIndex, mon.year, p.id, 'date', e.target.value)} /><input type="number" className="flex-1 bg-white border rounded px-1.5 py-0.5 text-[13px]" value={p.amount} onChange={e => updatePayLocal(editingId, mon.monthIndex, mon.year, p.id, 'amount', e.target.value)} /><button type="button" onClick={() => deletePayLocal(editingId, mon.monthIndex, mon.year, p.id)} className="text-rose-400"><Icon name="Trash" size={14} /></button></div> ))}
-                                                        <div className="flex gap-2"><div className="flex-1 relative font-black text-[15px]"><input type="number" id={`pay-${idx}`} className="w-full bg-white border rounded-xl px-3 py-2 outline-none" placeholder="฿ Amount" /><button type="button" onClick={() => { const el = document.getElementById(`pay-${idx}`); if(el) el.value = mon.owed-mon.paid > 0 ? mon.owed-mon.paid : 0; }} className="absolute right-2 top-2 text-[10px] text-indigo-500 uppercase">Fill</button></div><button type="button" onClick={()=>{const el=document.getElementById(`pay-${idx}`); if(el && el.value){ addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value=''; } }} className="bg-slate-900 text-white p-2.5 rounded-xl active:scale-90 transition-all"><Icon name="PlusCircle" size={20}/></button></div>
+                                                        <div className="flex gap-2"><div className="flex-1 relative font-black text-[15px]"><input type="number" id={`pay-${idx}`} className="w-full bg-white border rounded-xl px-3 py-2 outline-none" placeholder="฿ Amount" /><button type="button" onClick={() => { const el = document.getElementById(`pay-${idx}`); if(el) el.value = mon.owed-mon.paid > 0 ? mon.owed-mon.paid : 0; }} className="absolute right-2 top-2 text-[10px] text-indigo-500 uppercase">Fill</button></div><button type="button" onClick={()=>{const el=document.getElementById(`pay-${idx}`); if(el && el.value){ addPayLocal(editingId, mon.monthIndex, mon.year, el.value); if (el) el.value=''; } }} className="bg-slate-900 text-white p-2.5 rounded-xl active:scale-90 transition-all"><Icon name="PlusCircle" size={20}/></button></div>
                                                     </div> ))}
                                                 </div>}
                                             </div>
-                                            <div className="border-t pt-3"><button type="button" onClick={() => setShowNotesInModal(!showNotesInModal)} className="w-full flex items-center justify-between p-3 bg-slate-100 text-slate-600 rounded-xl active:scale-95 transition-all font-black uppercase text-[15px]"><div className="flex items-center gap-2 font-black"><Icon name="StickyNote" size={16} /><span>Guest Notes</span></div><Icon name={showNotesInModal ? "ChevronUp" : "ChevronDown"} size={20}/></button>{showNotesInModal && <textarea className="w-full mt-2 bg-slate-50 border rounded-xl p-3 font-bold text-[13px] h-32" placeholder="Guest specific stay notes..." value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})} />}</div>
                                         </Fragment>}
                                         <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase text-[15px]">Update Database</button>
                                     </form>
@@ -582,6 +685,5 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-    <script src="https://loren-6q.github.io/WETNav/nav.js"></script>
 </body>
 </html>
