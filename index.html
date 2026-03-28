@@ -243,7 +243,7 @@
                         const hKey = `${m}_${y}`;
                         if(!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mos[m]} ${y}`, m, y };
                         historyMap[hKey].exp += amt;
-                        if (m === month && y === year) currentMonthLedger.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: amt, type: 'OUT' });
+                        if (m === month && y === year) currentMonthLedger.push({ date: p.date, label: `${bill.category}${bill.title ? ' - ' + bill.title : ''} (${bill.property})`, amount: amt, type: 'OUT' });
                     });
                 });
 
@@ -372,7 +372,7 @@
                         {/* GLOBAL HEADER */}
                         <div className="flex flex-wrap justify-between items-center mb-1 gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-300">
                             <div className="flex items-center gap-3 pl-1">
-                                <div className="flex items-center gap-2"><div className="bg-indigo-800 p-1.5 rounded-xl text-white shadow-sm"><Icon name="Building2" size={20} /></div><h1 className="text-[15px] font-black tracking-tighter uppercase mr-3">PROP MANAGER</h1></div>
+                                <div className="flex items-center gap-2"><div className="bg-indigo-800 p-1.5 rounded-xl text-white shadow-sm"><Icon name="Building2" size={20} /></div><h1 className="text-[15px] font-black tracking-tighter uppercase mr-3">PROP MGR</h1></div>
                                 <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 gap-0.5 overflow-x-auto no-scrollbar">
                                     {[
                                         { id: 'calendar', label: 'CALENDAR', icon: 'LayoutGrid' },
@@ -459,6 +459,7 @@
                                                                         <div className="flex items-center justify-between w-full text-white whitespace-nowrap font-black text-[13px] tracking-tight uppercase overflow-hidden text-left">
                                                                             <span className="shrink-0 flex items-center gap-1.5 min-w-[30px]">
                                                                                 {!isStart && <span className="text-[10px] opacity-70">← PREV</span>}
+                                                                                {/* Pulsing Status Circles */}
                                                                                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 border border-white/30 ${bal > 0 ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} />
                                                                                 <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
                                                                             </span>
@@ -517,7 +518,7 @@
                                                             <Icon name="Receipt" size={20}/>
                                                         </div>
                                                         <div>
-                                                            <p className="uppercase">{bill.category}</p>
+                                                            <p className="uppercase">{bill.category}{bill.title ? ' - ' + bill.title : ''}</p>
                                                             <p className="text-[12px] font-bold text-slate-400 uppercase">{bill.property} • Due {bill.dueDate}</p>
                                                         </div>
                                                     </div>
@@ -629,8 +630,24 @@
                                 <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden my-auto animate-in zoom-in duration-200 font-black">
                                     <div className="p-4 border-b bg-slate-50 flex justify-between items-center font-black"><h2 className="text-[15px] uppercase tracking-widest pl-2">Bill Editor</h2><button onClick={() => setShowBillModal(false)} className="p-2 text-slate-400 hover:text-rose-500"><Icon name="X" size={24}/></button></div>
                                     <form onSubmit={handleBillSave} className="p-4 space-y-3">
-                                        <div className="grid grid-cols-2 gap-2 font-black"><select className="bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.category} onChange={e=>setBillFormData({...billFormData, category:e.target.value})}>{BILL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.id}</option>)}</select><select className="bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.property} onChange={e=>setBillFormData({...billFormData, property:e.target.value})}>{properties.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-                                        <div className="grid grid-cols-2 gap-2"><div><label className="text-[10px] uppercase ml-2 text-slate-400">Due Date</label><input type="date" required className="w-full bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.dueDate} onChange={e=>setBillFormData({...billFormData, dueDate:e.target.value})} /></div><div><label className="text-[10px] uppercase ml-2 text-slate-400">Amount</label><input type="number" required className="w-full bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.amount} onChange={e=>setBillFormData({...billFormData, amount:Number(e.target.value)})} /></div></div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase ml-2 text-slate-400">Description / Note</label>
+                                            <input type="text" placeholder="e.g. Plumber fix, AC cleaning" className="w-full bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.title} onChange={e=>setBillFormData({...billFormData, title:e.target.value})} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 font-black">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase ml-2 text-slate-400">Category</label>
+                                                <select className="w-full bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.category} onChange={e=>setBillFormData({...billFormData, category:e.target.value})}>{BILL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.id}</option>)}</select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase ml-2 text-slate-400">Property</label>
+                                                <select className="w-full bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.property} onChange={e=>setBillFormData({...billFormData, property:e.target.value})}>{properties.map(p => <option key={p} value={p}>{p}</option>)}</select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div><label className="text-[10px] uppercase ml-2 text-slate-400">Due Date</label><input type="date" required className="w-full bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.dueDate} onChange={e=>setBillFormData({...billFormData, dueDate:e.target.value})} /></div>
+                                            <div><label className="text-[10px] uppercase ml-2 text-slate-400">Amount</label><input type="number" required className="w-full bg-slate-50 border rounded-xl p-3 text-[15px]" value={billFormData.amount} onChange={e=>setBillFormData({...billFormData, amount:Number(e.target.value)})} /></div>
+                                        </div>
                                         <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase text-[15px]">Save Record</button>
                                     </form>
                                 </div>
