@@ -186,6 +186,7 @@
             const [showBillLedgerId, setShowBillLedgerId] = useState(null);
             const [formData, setFormData] = useState({ guestName: '', contact: '', room: '', property: '', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '', depositAmt: 0, depositCollected: false, depositRefunded: false });
             const [billFormData, setBillFormData] = useState({ title: '', category: 'Electric', property: 'Property A', amount: 0, dueDate: '', payments: [] });
+            const [hoveredCell, setHoveredCell] = useState({ roomId: null, day: null });
 
             const t = (key) => TRANSLATIONS[lang][key] || key;
             const toISODate = (date) => date.toLocaleDateString('sv-SE');
@@ -335,6 +336,9 @@
 
             if (!hasLoaded) return <div className="min-h-screen flex items-center justify-center font-black text-indigo-700 animate-pulse uppercase">Syncing...</div>;
 
+            const isTodayMonth = TODAY.getMonth() === month && TODAY.getFullYear() === year;
+            const todayDate = TODAY.getDate();
+
             return (
                 <div className="min-h-screen font-black p-1 pb-24 text-slate-900 font-condensed">
                     <div className="max-w-[1800px] mx-auto space-y-1">
@@ -398,7 +402,7 @@
                                             <div className="grid border-b-2 border-slate-400 bg-slate-50 sticky top-0 z-40 font-black" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, minmax(25px, 1fr))` }}>
                                                 <div className="p-1 text-slate-400 text-[14px] border-r-2 border-slate-400 sticky left-0 z-50 bg-slate-50 text-center flex items-center justify-center uppercase">Unit</div>
                                                 {Array.from({length: daysInMonth}).map((_,i) => (
-                                                    <div key={i} className="py-1 text-center border-r border-slate-400">
+                                                    <div key={i} className={`py-1 text-center border-r-2 border-slate-400 ${isTodayMonth && (i+1 === todayDate) ? 'bg-amber-100' : ''} ${hoveredCell.day === i+1 ? 'bg-indigo-100/50' : ''}`}>
                                                         <span className="text-[10px] uppercase text-slate-400 block">{new Date(year, month, i+1).toLocaleDateString('en',{weekday:'short'}).charAt(0)}</span>
                                                         <span className="text-[16px]">{i+1}</span>
                                                     </div>
@@ -409,9 +413,15 @@
                                                     <div className="grid border-b-2 border-slate-400 bg-indigo-50/80 sticky left-0 z-10 font-black uppercase text-indigo-700 p-2 border-r-2 border-r-slate-400 text-[15px]">{group.name}</div>
                                                     {group.rooms.map(r => (
                                                         <div key={r.id} className="grid border-b-2 border-slate-300 relative min-h-[44px]" style={{ gridTemplateColumns: `85px repeat(${daysInMonth}, minmax(25px, 1fr))` }}>
-                                                            <div className="p-1 sticky left-0 z-30 bg-white border-r-2 border-slate-400 flex flex-col items-center justify-center font-black text-[17px] text-slate-700">{r.name}</div>
+                                                            <div className={`p-1 sticky left-0 z-30 border-r-2 border-slate-400 flex flex-col items-center justify-center font-black text-[17px] text-slate-700 ${hoveredCell.roomId === r.id ? 'bg-indigo-100' : 'bg-white'}`}>{r.name}</div>
                                                             {Array.from({length: daysInMonth}).map((_,i) => (
-                                                                <div key={i} onClick={() => handleCellClick(r, i+1)} className="border-r border-slate-400 last:border-0 hover:bg-slate-50 transition-colors cursor-crosshair" />
+                                                                <div 
+                                                                    key={i} 
+                                                                    onClick={() => handleCellClick(r, i+1)} 
+                                                                    onMouseEnter={() => setHoveredCell({ roomId: r.id, day: i+1 })}
+                                                                    onMouseLeave={() => setHoveredCell({ roomId: null, day: null })}
+                                                                    className={`border-r border-slate-400 last:border-0 hover:bg-slate-50 transition-colors cursor-crosshair ${isTodayMonth && (i+1 === todayDate) ? 'bg-amber-50/30' : ''}`} 
+                                                                />
                                                             ))}
                                                             {filteredBookings.filter(b => b.room === r.name).map(booking => {
                                                                 const sch = getPaymentSchedule(booking).find(s => s.monthIndex === month && s.year === year);
