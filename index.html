@@ -104,7 +104,7 @@
                 CATEGORY: "Category", AMT_DUE: "Amt Due", CONFIRM_DELETE: "Confirm Delete", DELETE_MSG: "Delete permanently?", CANCEL: "Cancel", DELETE: "Delete",
                 RENT: "Rent", ELEC: "Elec", WATER: "Water", OTHER: "Other", ADD_PAYMENT: "Add Payment",
                 TOTAL_INCOME: "Total Income", TOTAL_EXPENSE: "Total Expenses", NET_POSITION: "Current Net", LEDGER: "Detailed Ledger", HISTORY: "History",
-                EDIT_STAY: "Edit Stay", SYSTEM_CONFIG: "System Config"
+                EDIT_STAY: "Edit Stay", SYSTEM_CONFIG: "System Config", DEPOSIT: "Deposit", COLLECTED: "Collected", REFUNDED: "Refunded", SETTINGS: "Settings", MANAGE_EXPENSES: "Manage Expenses", NEW_BILL: "New Bill"
             },
             th: {
                 CALENDAR: "ปฏิทิน", NOTES: "แจ้งเตือน", EMPTY: "ห้องว่าง", BILLS: "บิล", GUESTS: "ผู้พัก", ACCOUNTS: "บัญชี",
@@ -115,7 +115,8 @@
                 NOTIF_HEADER: "การแจ้งเตือนตามลำดับเวลา (30 วันถัดไป และค้างชำระ)", SEARCH: "ค้นหา...", CAT_FILTER: "ทุกหมวดหมู่",
                 CATEGORY: "หมวดหมู่", AMT_DUE: "ค้างชำระ", CONFIRM_DELETE: "ยืนยันการลบ", DELETE_MSG: "ลบถาวร?", CANCEL: "ยกเลิก", DELETE: "ลบ",
                 RENT: "ค่าเช่า", ELEC: "ค่าไฟ", WATER: "ค่าน้ำ", OTHER: "อื่นๆ", ADD_PAYMENT: "เพิ่มเงิน",
-                TOTAL_INCOME: "รายได้รวม", TOTAL_EXPENSE: "รายจ่ายรวม", NET_POSITION: "กำไรสุทธิ", LEDGER: "บันทึกรายรับ-รายจ่าย", HISTORY: "ประวัติ"
+                TOTAL_INCOME: "รายได้รวม", TOTAL_EXPENSE: "รายจ่ายรวม", NET_POSITION: "กำไรสุทธิ", LEDGER: "บันทึกรายรับ-รายจ่าย", HISTORY: "ประวัติ",
+                DEPOSIT: "เงินประกัน", COLLECTED: "เก็บแล้ว", REFUNDED: "คืนแล้ว", SETTINGS: "ตั้งค่า", MANAGE_EXPENSES: "จัดการรายจ่าย", NEW_BILL: "เพิ่มบิล"
             }
         };
 
@@ -125,7 +126,7 @@
                 LayoutGrid: <Fragment><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></Fragment>,
                 BellRing: <Fragment><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></Fragment>,
                 LayoutDashboard: <Fragment><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></Fragment>,
-                Receipt: <Fragment><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V6.5"/></Fragment>,
+                Receipt: <Fragment><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V6.5"/></Fragment>,
                 Wallet: <Fragment><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></Fragment>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>, ChevronRight: <path d="m9 18 6-6-6-6"/>, ChevronUp: <path d="m18 15-6-6-6 6"/>, ChevronDown: <path d="m6 9 6 6 6-6"/>,
                 PlusCircle: <Fragment><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></Fragment>,
@@ -137,14 +138,18 @@
                 History: <Fragment><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></Fragment>,
                 StickyNote: <Fragment><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"/><path d="M15 3v6h6"/><path d="M9 13h6"/><path d="M9 17h3"/></Fragment>,
                 Trash: <Fragment><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></Fragment>,
-                Check: <path d="M20 6 9 17l-5-5"/>, MoreHorizontal: <Fragment><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></Fragment>, ArrowUp: <path d="m18 15-6-6-6 6"/>, ArrowDown: <path d="m6 9 6 6 6-6"/>,
-                Settings: <Fragment><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Fragment>,
                 X: <path d="M18 6 6 18M6 6l12 12"/>,
+                ArrowUp: <path d="m18 15-6-6-6 6"/>, ArrowDown: <path d="m6 9 6 6 6-6"/>,
+                Search: <Fragment><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></Fragment>,
+                Settings: <Fragment><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Fragment>,
                 Users: <Fragment><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Fragment>,
-                Pencil: <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>, Copy: <Fragment><rect width="10" height="10" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></Fragment>,
+                Check: <path d="M20 6 9 17l-5-5"/>,
                 Wifi: <Fragment><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></Fragment>,
                 Sparkles: <Fragment><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></Fragment>,
-                Wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                Wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>,
+                MoreHorizontal: <Fragment><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></Fragment>,
+                Pencil: <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>, 
+                Copy: <Fragment><rect width="10" height="10" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></Fragment>
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -174,11 +179,12 @@
             const isReadyToSync = useRef(false);
             const [deleteTarget, setDeleteTarget] = useState(null); 
             const [showModal, setShowModal] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
             const [editingId, setEditingId] = useState(null);
             const [showLedgerInModal, setShowLedgerInModal] = useState(false);
             const [showNotesInModal, setShowNotesInModal] = useState(false);
             const [showBillLedgerId, setShowBillLedgerId] = useState(null);
-            const [formData, setFormData] = useState({ guestName: '', contact: '', room: '', property: '', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '' });
+            const [formData, setFormData] = useState({ guestName: '', contact: '', room: '', property: '', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '', depositAmt: 0, depositCollected: false, depositRefunded: false });
             const [billFormData, setBillFormData] = useState({ title: '', category: 'Electric', property: 'Property A', amount: 0, dueDate: '', payments: [] });
 
             const t = (key) => TRANSLATIONS[lang][key] || key;
@@ -187,7 +193,6 @@
             const formatRemDate = (dateStr) => { if (!dateStr) return '...'; const d = new Date(dateStr); return `${d.getDate()} ${lang === 'th' ? mosTh[d.getMonth()] : mosEn[d.getMonth()]}`; };
             const formatBarDate = (dateStr) => { if (!dateStr) return ''; const d = new Date(dateStr); return `${d.getDate()}${mosEn[d.getMonth()]}`; };
             
-            // Defined early to avoid reference errors
             const handleSort = (key) => setSortConfig(p => ({ key, direction: p.key === key && p.direction === 'asc' ? 'desc' : 'asc' }));
             const getSortIcon = (key) => sortConfig.key !== key ? <Icon name="MoreHorizontal" size={10} className="opacity-20" /> : <Icon name={sortConfig.direction === 'asc' ? 'ArrowUp' : 'ArrowDown'} size={10} className="text-indigo-600" />;
 
@@ -313,10 +318,10 @@
 
             const handleCellClick = (room, day) => {
                 const start = new Date(year, month, day); const end = new Date(year, month, day + 1);
-                setEditingId(null); setFormData({ guestName: '', contact: '', room: room.name, property: room.property, start: toISODate(start), end: toISODate(end), monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '' }); setShowModal(true);
+                setEditingId(null); setFormData({ guestName: '', contact: '', room: room.name, property: room.property, start: toISODate(start), end: toISODate(end), monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '', depositAmt: 0, depositCollected: false, depositRefunded: false }); setShowModal(true);
             };
 
-            const handleSaveBooking = async (e) => { e.preventDefault(); const newB = editingId ? bookings.map(b => b.id === editingId ? { ...formData, id: editingId } : b) : [...bookings, { ...formData, id: Date.now().toString(), manualStatus: 'auto', notes: '' }]; setBookings(newB); await syncData({ bookings: newB }); setShowModal(false); };
+            const handleSaveBooking = async (e) => { e.preventDefault(); const newB = editingId ? bookings.map(b => b.id === editingId ? { ...formData, id: editingId } : b) : [...bookings, { ...formData, id: Date.now().toString(), manualStatus: 'auto', notes: '', depositAmt: 0, depositCollected: false, depositRefunded: false }]; setBookings(newB); await syncData({ bookings: newB }); setShowModal(false); };
             const executeDelete = async () => { if (!deleteTarget) return; if (deleteTarget.type === 'booking') { const n = bookings.filter(x => x.id !== deleteTarget.id); setBookings(n); await syncData({ bookings: n }); setShowModal(false); } else if (deleteTarget.type === 'bill') { const n = bills.filter(b => b.id !== deleteTarget.id); setBills(n); await syncData({ bills: n }); } setDeleteTarget(null); };
             const addPayLocal = async (bid, m, y, amt) => { const k = `${bid}_${m}_${y}`, n = { ...paymentLog, [k]: [...(paymentLog[k] || []), { id: Date.now().toString(), amount: Number(amt), date: toISODate(new Date()) }] }; setPaymentLog(n); await syncData({ paymentLog: n }); };
             const updatePayLocal = async (bid, m, y, pid, f, v) => { const k = `${bid}_${m}_${y}`, n = { ...paymentLog, [k]: (paymentLog[k] || []).map(p => p.id === pid ? {...p, [f]: f === 'amount' ? (v === '' ? 0 : Number(v)) : v} : p) }; setPaymentLog(n); await syncData({ paymentLog: n }); };
@@ -452,7 +457,7 @@
                             </div>
                         )}
 
-                        {/* NOTES TAB - Persistent Chronological Feed with Increased Font */}
+                        {/* NOTES TAB */}
                         {activeTab === 'reminders' && (
                             <div className="p-2 space-y-4 animate-in fade-in duration-300 font-black max-w-6xl mx-auto">
                                 <h2 className="text-[20px] uppercase text-center text-slate-800 tracking-widest">{t('NOTIF_HEADER')}</h2>
@@ -464,11 +469,9 @@
                                         bookings.forEach(b => {
                                             const s = new Date(b.start), e = new Date(b.end);
                                             const status = getStatus(b).id;
-                                            // Check-in logistics: persistent until checked-in
                                             if (s <= horizon && status !== 'checked-in' && status !== 'checked-out') {
                                                 feed.push({ date: b.start, type: 'IN', label: `${b.guestName} (${b.room})`, icon: 'Home', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', b });
                                             }
-                                            // Check-out logistics: persistent until checked-out
                                             if (e <= horizon && status !== 'checked-out') {
                                                 feed.push({ date: b.end, type: 'OUT', label: `${b.guestName} (${b.room})`, icon: 'CheckCircle2', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', b });
                                             }
@@ -515,7 +518,7 @@
                             </div>
                         )}
 
-                        {/* VACANCY TAB (EMPTY) */}
+                        {/* VACANCY TAB */}
                         {activeTab === 'vacancy' && (
                             <div className="p-2 space-y-2 animate-in fade-in duration-300 font-black">
                                 <div className="card-standard max-w-xl mx-auto">
@@ -570,7 +573,32 @@
                                     <h2 className="text-[18px] uppercase text-indigo-700 flex items-center gap-2"><Icon name="Users" size={18}/> {t('GUESTS')}</h2>
                                     <div className="relative flex-1 max-w-xs"><Icon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/><input className="w-full bg-slate-100 border-none rounded-xl pl-10 pr-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 font-black font-condensed text-[18px]" placeholder={t('SEARCH')} value={historySearch} onChange={e=>setHistorySearch(e.target.value)} /></div>
                                 </div>
-                                <div className="card-standard"><div className="overflow-x-auto"><table className="w-full text-left table-fixed"><thead><tr><th className="th-custom hover:bg-slate-100 cursor-pointer w-[25%]" onClick={() => handleSort('guestName')}>Guest {getSortIcon('guestName')}</th><th className="th-custom hover:bg-slate-100 cursor-pointer w-[20%]" onClick={() => handleSort('property')}>Property {getSortIcon('property')}</th><th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('room')}>Room {getSortIcon('room')}</th><th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('start')}>Start {getSortIcon('start')}</th><th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('end')}>End {getSortIcon('end')}</th></tr></thead><tbody className="divide-y text-[15px]">{allGuestsSorted.map(b => (<tr key={b.id} onClick={() => { setEditingId(b.id); setFormData({...b}); setShowModal(true); }} className="hover:bg-slate-50 font-black cursor-pointer uppercase"><td className="td-custom truncate">{b.guestName}</td><td className="td-custom opacity-70 truncate">{b.property || 'N/A'}</td><td className="td-custom text-indigo-600 truncate">{b.room}</td><td className="td-custom opacity-70 truncate">{b.start}</td><td className="td-custom opacity-70 truncate">{b.end}</td></tr>))}</tbody></table></div></div>
+                                <div className="card-standard">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left table-fixed">
+                                            <thead>
+                                                <tr>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[25%]" onClick={() => handleSort('guestName')}>Guest {getSortIcon('guestName')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[20%]" onClick={() => handleSort('property')}>Property {getSortIcon('property')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('room')}>Room {getSortIcon('room')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('start')}>Start {getSortIcon('start')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('end')}>End {getSortIcon('end')}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y text-[15px]">
+                                                {allGuestsSorted.map(b => (
+                                                    <tr key={b.id} onClick={() => { setEditingId(b.id); setFormData({...b}); setShowModal(true); }} className="hover:bg-slate-50 font-black cursor-pointer uppercase">
+                                                        <td className="td-custom truncate">{b.guestName}</td>
+                                                        <td className="td-custom opacity-70 truncate">{b.property || 'N/A'}</td>
+                                                        <td className="td-custom text-indigo-600 truncate">{b.room}</td>
+                                                        <td className="td-custom opacity-70 truncate">{b.start}</td>
+                                                        <td className="td-custom opacity-70 truncate">{b.end}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -589,21 +617,60 @@
                                 <div className="bg-white rounded-[1.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in duration-150">
                                     <div className="p-2 border-b border-slate-200 flex items-center bg-slate-50 gap-2">
                                         <input type="text" required placeholder={t('GUEST_NAME')} className="flex-1 bg-transparent text-[22px] font-black uppercase text-indigo-800 border-none focus:ring-0 outline-none placeholder:text-indigo-200" value={formData.guestName} onChange={e=>setFormData({...formData, guestName:e.target.value})} />
-                                        <button onClick={() => setShowModal(false)} className="p-1 text-slate-400 hover:text-rose-500"><Icon name="X" size={24}/></button>
+                                        
+                                        <div className="flex items-center gap-1.5 bg-indigo-100/50 px-2 py-1 rounded-xl border border-indigo-200 ml-auto">
+                                            <Icon name="Home" size={16} className="text-indigo-700" />
+                                            <select className="bg-transparent text-[18px] font-black text-indigo-800 outline-none font-condensed cursor-pointer" value={formData.room} onChange={e => { const r = rooms.find(x => x.name === e.target.value); setFormData({...formData, room: e.target.value, property: r?.property || properties[0]}); }}>{rooms.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select>
+                                        </div>
+
+                                        <button onClick={() => setShowModal(false)} className="p-1 text-slate-400 hover:text-rose-500 ml-1"><Icon name="X" size={24}/></button>
                                     </div>
 
                                     <form onSubmit={handleSaveBooking} className="p-3 space-y-2">
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <div><label className="badge-label text-[15px]">{t('CONTACT')}</label><input type="text" className="input-base w-full py-1.5 px-2 text-[20px]" value={formData.contact} onChange={e=>setFormData({...formData, contact:e.target.value})} /></div>
-                                            <div><label className="badge-label text-[15px]">{t('UNIT')}</label><select className="input-base w-full py-1.5 text-indigo-700 text-[20px]" value={formData.room} onChange={e => { const r = rooms.find(x => x.name === e.target.value); setFormData({...formData, room: e.target.value, property: r?.property || properties[0]}); }}>{rooms.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select></div>
-                                            <div><label className="badge-label text-[15px]">Status</label><select className="input-base w-full py-1.5 text-indigo-700 uppercase text-[20px]" value={formData.manualStatus} onChange={e=>setFormData({...formData, manualStatus:e.target.value})}><option value="auto">Auto</option><option value="future">Future</option><option value="checked-in">In</option><option value="checked-out">Out</option></select></div>
+                                        <div className="grid grid-cols-[1.9fr_0.55fr_0.55fr] gap-2">
+                                            <div><label className="badge-label text-[13px]">{t('CONTACT')}</label><input type="text" className="input-base w-full py-1.5 px-2 text-[18px]" value={formData.contact} onChange={e=>setFormData({...formData, contact:e.target.value})} /></div>
+                                            <div><label className="badge-label text-[13px]">In</label><input type="date" required className="w-full input-base py-1.5 px-2 text-[16px]" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
+                                            <div><label className="badge-label text-[13px]">Out</label><input type="date" required className="w-full input-base py-1.5 px-2 text-[16px]" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
                                         </div>
 
-                                        <div className="grid grid-cols-4 gap-2">
-                                            <div><label className="badge-label text-[15px]">In</label><input type="date" required className="w-full input-base py-1.5 px-2 text-[17px]" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
-                                            <div><label className="badge-label text-[15px]">Out</label><input type="date" required className="w-full input-base py-1.5 px-2 text-[17px]" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
-                                            <div><label className="badge-label text-[15px]">{t('RATE')}</label><input type="number" className="w-full input-base py-1.5 text-indigo-700 text-[20px]" value={formData.monthlyRate === 0 ? '' : formData.monthlyRate} onChange={e=>setFormData({...formData, monthlyRate: e.target.value === '' ? 0 : Number(e.target.value)})} /></div>
-                                            <div className="flex flex-col items-center justify-end pb-1.5"><label className="badge-label text-[15px] !mb-1">{t('FIXED')}</label><input type="checkbox" className="w-7 h-7 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked={formData.isFixedPrice} onChange={e=>setFormData({...formData, isFixedPrice: e.target.checked})} /></div>
+                                        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+                                            <div className="flex gap-1.5 items-end bg-indigo-50/50 p-1.5 rounded-xl border border-indigo-100 h-[64px]">
+                                                <div className="flex-1">
+                                                    <label className="badge-label text-[13px] text-indigo-700">{t('RATE')}</label>
+                                                    <input type="number" className="w-full input-base py-1 text-indigo-900 text-[18px] bg-white px-2" value={formData.monthlyRate === 0 ? '' : formData.monthlyRate} onChange={e=>setFormData({...formData, monthlyRate: e.target.value === '' ? 0 : Number(e.target.value)})} />
+                                                </div>
+                                                <div className="flex flex-col items-center pb-0.5 min-w-[35px]">
+                                                    <label className="text-[10px] uppercase font-black text-indigo-600 mb-0.5">{t('FIXED')}</label>
+                                                    <input type="checkbox" className="w-5 h-5 rounded border-indigo-300 text-indigo-600" checked={formData.isFixedPrice} onChange={e=>setFormData({...formData, isFixedPrice: e.target.checked})} />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2 items-center bg-amber-50/50 p-1.5 rounded-xl border border-amber-100 h-[64px] flex-initial">
+                                                <div>
+                                                    <label className="badge-label text-[13px] text-amber-700">{t('DEPOSIT')}</label>
+                                                    <input type="number" className="w-24 input-base py-1 text-amber-900 text-[18px] bg-white px-2" value={formData.depositAmt === 0 ? '' : formData.depositAmt} onChange={e=>setFormData({...formData, depositAmt: e.target.value === '' ? 0 : Number(e.target.value)})} />
+                                                </div>
+                                                <div className="flex flex-col gap-1 pr-1">
+                                                    <label className="flex items-center gap-1.5 text-[11px] font-black text-amber-700 cursor-pointer select-none">
+                                                        <input type="checkbox" className="w-4 h-4 rounded border-amber-300 text-amber-600" checked={formData.depositCollected} onChange={e=>setFormData({...formData, depositCollected: e.target.checked})} />
+                                                        {t('COLLECTED')}
+                                                    </label>
+                                                    <label className="flex items-center gap-1.5 text-[11px] font-black text-amber-700 cursor-pointer select-none">
+                                                        <input type="checkbox" className="w-4 h-4 rounded border-amber-300 text-amber-600" checked={formData.depositRefunded} onChange={e=>setFormData({...formData, depositRefunded: e.target.checked})} />
+                                                        {t('REFUNDED')}
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div className="h-[64px] flex flex-col justify-end">
+                                                <label className="badge-label text-[13px]">Status</label>
+                                                <select className="input-base w-full py-1.5 px-2 text-indigo-700 uppercase text-[15px] bg-white" value={formData.manualStatus} onChange={e=>setFormData({...formData, manualStatus:e.target.value})}>
+                                                    <option value="auto">Auto</option>
+                                                    <option value="future">Future</option>
+                                                    <option value="checked-in">In</option>
+                                                    <option value="checked-out">Out</option>
+                                                </select>
+                                            </div>
                                         </div>
 
                                         <div className="pt-1">
@@ -635,7 +702,6 @@
                                                             </div>
                                                             
                                                             <div className="flex flex-row gap-1.5 px-1 pb-1 items-center">
-                                                                {/* Combined Utility Row: 66% Elec, 33% Water */}
                                                                 <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200 flex-[2]">
                                                                     <Icon name="Zap" size={20} className="text-amber-500 fill-amber-500" />
                                                                     <span className="text-[13px] uppercase text-slate-400 font-black">ELEC</span>
@@ -684,6 +750,34 @@
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SETTINGS MODAL */}
+                        {showSettings && (
+                            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-2 font-black font-condensed">
+                                <div className="bg-white rounded-[1.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-150">
+                                    <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                                        <h2 className="text-[20px] uppercase text-indigo-800">{t('SYSTEM_CONFIG')}</h2>
+                                        <button onClick={() => setShowSettings(false)} className="p-1 text-slate-400 hover:text-rose-500"><Icon name="X" size={24}/></button>
+                                    </div>
+                                    <div className="p-4 space-y-4">
+                                        <div>
+                                            <label className="badge-label">Properties</label>
+                                            <div className="space-y-1">
+                                                {properties.map((p, i) => (
+                                                    <div key={i} className="flex gap-2">
+                                                        <input className="input-base flex-1 py-1 px-2" value={p} onChange={e => {
+                                                            const n = [...properties]; n[i] = e.target.value;
+                                                            setProperties(n); syncData({ properties: n });
+                                                        }} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setShowSettings(false)} className="btn-action w-full py-2">{t('UPDATE')}</button>
+                                    </div>
                                 </div>
                             </div>
                         )}
