@@ -43,7 +43,7 @@
             }
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            .th-custom { @apply px-1.5 py-2 bg-slate-50 border-b text-[13px] uppercase opacity-60 font-black text-left select-none; }
+            .th-custom { @apply px-1.5 py-2 bg-slate-50 border-b text-[13px] uppercase opacity-60 font-black text-left select-none whitespace-nowrap; }
             .td-custom { @apply px-1.5 py-1.5 border-b text-[15px] font-black; }
             .note-row {
                 @apply p-1.5 rounded-lg border font-black text-[13px] uppercase truncate flex items-center gap-2 whitespace-nowrap overflow-hidden;
@@ -84,7 +84,9 @@
                 RENT: "Rent", ELEC: "Elec", WATER: "Water", OTHER: "Other", ADD_PAYMENT: "Add Payment",
                 TOTAL_INCOME: "Total Income", TOTAL_EXPENSE: "Total Expenses", NET_POSITION: "Current Net", LEDGER: "Detailed Ledger", HISTORY: "History",
                 EDIT_STAY: "Edit Stay", SYSTEM_CONFIG: "System Config", DEPOSIT: "Deposit", COLLECTED: "Collected", REFUNDED: "Refunded", SETTINGS: "Settings", MANAGE_EXPENSES: "Manage Expenses", NEW_BILL: "New Bill", PROPERTIES: "Properties",
-                FIT_SCREEN: "Fit Screen", PROPERTY: "Property", DUE_DATE: "Due Date", AMOUNT: "Amount", DESC: "Details"
+                FIT_SCREEN: "Fit Screen", PROPERTY: "Property", DUE_DATE: "Due Date", AMOUNT: "Amount", DESC: "Details",
+                FUTURE: "FUTURE", IN: "IN", OUT: "OUT", FROM: "From:", GUEST: "Guest", START: "Start", END: "End", DATE: "Date", REF: "Reference", MONTH: "Month", INCOME: "Income", EXPENSE: "Expense", NET: "Net", CURR_MONTH: "(CURRENT MONTH)", DUE: "DUE",
+                PENDING: "Pending", CUMULATIVE: "Overall", THIS_MONTH: "This Month", TOTAL: "Total", REMAINING: "Remaining"
             },
             th: {
                 CALENDAR: "ปฏิทิน", NOTES: "แจ้งเตือน", EMPTY: "ห้องว่าง", BILLS: "บิล", GUESTS: "ผู้พัก", ACCOUNTS: "บัญชี",
@@ -97,7 +99,9 @@
                 RENT: "ค่าเช่า", ELEC: "ค่าไฟ", WATER: "ค่าน้ำ", OTHER: "อื่นๆ", ADD_PAYMENT: "เพิ่มเงิน",
                 TOTAL_INCOME: "รายได้รวม", TOTAL_EXPENSE: "รายจ่ายรวม", NET_POSITION: "กำไรสุทธิ", LEDGER: "บันทึกรายรับ-รายจ่าย", HISTORY: "ประวัติ",
                 DEPOSIT: "เงินประกัน", COLLECTED: "เก็บแล้ว", REFUNDED: "คืนแล้ว", SETTINGS: "ตั้งค่า", MANAGE_EXPENSES: "จัดการรายจ่าย", NEW_BILL: "เพิ่มบิล", PROPERTIES: "อาคาร/โครงการ",
-                FIT_SCREEN: "จัดขนาด", PROPERTY: "โครงการ", DUE_DATE: "กำหนดชำระ", AMOUNT: "ยอดเงิน", DESC: "รายละเอียด"
+                FIT_SCREEN: "จัดขนาด", PROPERTY: "โครงการ", DUE_DATE: "กำหนดชำระ", AMOUNT: "ยอดเงิน", DESC: "รายละเอียด",
+                FUTURE: "จองล่วงหน้า", IN: "เข้าพัก", OUT: "เช็คเอาท์", FROM: "ตั้งแต่:", GUEST: "ผู้พัก", START: "เริ่ม", END: "สิ้นสุด", DATE: "วันที่", REF: "รายละเอียด", MONTH: "เดือน", INCOME: "รายรับ", EXPENSE: "รายจ่าย", NET: "สุทธิ", CURR_MONTH: "(เดือนปัจจุบัน)", DUE: "ครบกำหนด",
+                PENDING: "ค้างรับ", CUMULATIVE: "ยอดสะสมทั้งหมด", THIS_MONTH: "เดือนนี้", TOTAL: "ยอดรวม", REMAINING: "คงเหลือ"
             }
         };
 
@@ -132,7 +136,7 @@
                 LayoutGrid: <Fragment><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></Fragment>,
                 BellRing: <Fragment><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></Fragment>,
                 LayoutDashboard: <Fragment><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></Fragment>,
-                Receipt: <Fragment><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V6.5"/></Fragment>,
+                Receipt: <Fragment><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V6.5"/></Fragment>,
                 Wallet: <Fragment><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></Fragment>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>, ChevronRight: <path d="m9 18 6-6-6-6"/>, ChevronUp: <path d="m18 15-6-6-6 6"/>, ChevronDown: <path d="m6 9 6 6 6-6"/>,
                 PlusCircle: <Fragment><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></Fragment>,
@@ -194,7 +198,8 @@
             const [properties, setProperties] = useState(['Property A', 'Property B']);
             const [dbStatus, setDbStatus] = useState({ auth: 'Wait...', firestore: 'Wait...', error: null });
             const [hasLoaded, setHasLoaded] = useState(false);
-            const [showAllBills, setShowAllBills] = useState(false);
+            const [billStatusFilter, setBillStatusFilter] = useState('All');
+            const [showFutureBills, setShowFutureBills] = useState(true);
             const isReadyToSync = useRef(false);
             
             const [deleteTarget, setDeleteTarget] = useState(null); 
@@ -205,6 +210,8 @@
             const [showLedgerInModal, setShowLedgerInModal] = useState(false);
             const [showNotesInModal, setShowNotesInModal] = useState(false);
             const [showBillLedgerId, setShowBillLedgerId] = useState(null);
+            const [expandedHistoryMonth, setExpandedHistoryMonth] = useState(null);
+            const [editingTransaction, setEditingTransaction] = useState(null);
             const [formData, setFormData] = useState({ guestName: '', contact: '', room: '', property: '', start: '', end: '', monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '', depositAmt: 0, depositCollected: false, depositRefunded: false });
             const [billFormData, setBillFormData] = useState({ title: '', category: 'Electric', property: 'Property A', amount: 0, dueDate: '', payments: [] });
             const [hoveredCell, setHoveredCell] = useState({ roomId: null, dateStr: null });
@@ -325,37 +332,87 @@
                 })).filter(g => g.rooms.length > 0);
             }, [filteredRooms, properties, selectedProperty]);
 
-            const filteredBills = useMemo(() => {
-                let list = bills.filter(b => (selectedProperty === 'All' || b.property === selectedProperty) && (selectedBillCategory === 'All' || b.category === selectedBillCategory));
-                if (!showAllBills) {
-                    const cut = new Date(TODAY); cut.setDate(cut.getDate() - 60);
-                    list = list.filter(bill => {
-                        const paid = (bill.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-                        const balance = (Number(bill.amount) || 0) - paid;
-                        return balance > 0 || new Date(bill.dueDate) >= cut;
-                    });
-                }
-                return list.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
-            }, [bills, selectedProperty, selectedBillCategory, showAllBills]);
+            const { currentBills, historyBills, filteredBills } = useMemo(() => {
+                let curr = [];
+                let hist = [];
+                let allFiltered = [];
+                const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                const todayMs = TODAY.getTime();
+                const minDate = todayMs - thirtyDaysMs;
+                const maxDate = todayMs + thirtyDaysMs;
+
+                bills.forEach(bill => {
+                    if (selectedProperty !== 'All' && bill.property !== selectedProperty) return;
+                    if (selectedBillCategory !== 'All' && bill.category !== selectedBillCategory) return;
+                    
+                    const paid = (bill.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                    const bal = (Number(bill.amount) || 0) - paid;
+                    
+                    if (billStatusFilter === 'Paid' && bal > 0) return;
+                    if (billStatusFilter === 'Unpaid' && bal <= 0) return;
+
+                    allFiltered.push(bill);
+
+                    const bDate = new Date(bill.dueDate).getTime();
+                    
+                    // CURRENT includes: Overdue bills OR any bill within +/- 30 days of today
+                    const isOverdue = (bal > 0 && bDate < todayMs);
+                    const isWithinWindow = (bDate >= minDate && bDate <= maxDate);
+                    
+                    let isCurrent = isOverdue || isWithinWindow;
+
+                    // Future toggle includes EVERYTHING beyond the 30 day window
+                    if (showFutureBills && bDate > maxDate) {
+                        isCurrent = true;
+                    }
+
+                    if (isCurrent) {
+                        curr.push(bill);
+                    } else if (bDate < minDate) {
+                        // HISTORY includes everything strictly older than 30 days (that isn't overdue)
+                        hist.push(bill);
+                    }
+                });
+
+                curr.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+                hist.sort((a,b) => new Date(b.dueDate) - new Date(a.dueDate)); 
+                return { currentBills: curr, historyBills: hist, filteredBills: allFiltered };
+            }, [bills, selectedProperty, selectedBillCategory, billStatusFilter, showFutureBills]);
 
             const accountingData = useMemo(() => {
                 let totalIncome = 0; let totalExpense = 0;
-                const currentMonthLedger = []; const historyMap = {};
+                let totalPending = 0; let currentMonthPending = 0;
+                const currentM = TODAY.getMonth();
+                const currentY = TODAY.getFullYear();
+                const historyMap = {};
                 const visibleBookingIds = new Set(filteredBookings.map(b => b.id));
                 const bookingLookup = {}; filteredBookings.forEach(b => bookingLookup[b.id] = b);
                 
+                filteredBookings.forEach(b => {
+                    const schedule = getPaymentSchedule(b);
+                    schedule.forEach(s => {
+                        const pending = Math.max(0, s.owed - s.paid);
+                        if (pending > 0) {
+                            totalPending += pending;
+                            if (s.monthIndex === currentM && s.year === currentY) {
+                                currentMonthPending += pending;
+                            }
+                        }
+                    });
+                });
+
                 Object.entries(paymentLog).forEach(([key, pays]) => {
                     const parts = key.split('_');
                     if (parts.length === 3 && visibleBookingIds.has(parts[0])) {
                         const b = bookingLookup[parts[0]];
                         if (!b) return;
                         const m = parseInt(parts[1]), y = parseInt(parts[2]), hKey = `${m}_${y}`;
-                        if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y };
                         pays.forEach(p => { 
+                            if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y, transactions: [] };
                             const amt = Number(p.amount) || 0;
                             totalIncome += amt;
                             historyMap[hKey].inc += amt;
-                            currentMonthLedger.push({ date: p.date, label: `${b.guestName} (${b.room})`, amount: amt, type: 'IN' });
+                            historyMap[hKey].transactions.push({ date: p.date, label: `${b.guestName} (${b.room})`, amount: amt, type: 'IN', payload: { bid: parts[0], m, y, pid: p.id } });
                         });
                     }
                 });
@@ -365,18 +422,26 @@
                         const amt = Number(p.amount) || 0;
                         totalExpense += amt;
                         const d = new Date(p.date), m = d.getMonth(), y = d.getFullYear(), hKey = `${m}_${y}`;
-                        if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y };
+                        if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y, transactions: [] };
                         historyMap[hKey].exp += amt;
-                        currentMonthLedger.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: amt, type: 'OUT' });
+                        historyMap[hKey].transactions.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: amt, type: 'OUT', payload: { billId: bill.id, pid: p.id } });
                     });
                 });
 
+                Object.values(historyMap).forEach(h => {
+                    h.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+                });
+
+                const currentHKey = `${TODAY.getMonth()}_${TODAY.getFullYear()}`;
+                const currentMonthData = historyMap[currentHKey] || { inc: 0, exp: 0, transactions: [] };
+
                 return { 
-                    income: totalIncome, expense: totalExpense, net: totalIncome - totalExpense,
-                    monthLedger: currentMonthLedger.sort((a,b) => new Date(b.date) - new Date(a.date)),
+                    income: totalIncome, expense: totalExpense, net: totalIncome - totalExpense, pending: totalPending,
+                    currentMonthIncome: currentMonthData.inc, currentMonthExpense: currentMonthData.exp, currentMonthNet: currentMonthData.inc - currentMonthData.exp, currentMonthPending: currentMonthPending,
+                    currentMonthLedger: currentMonthData.transactions,
                     history: Object.values(historyMap).sort((a,b) => new Date(b.y, b.m) - new Date(a.y, a.m)).reverse()
                 };
-            }, [filteredBookings, filteredBills, paymentLog]);
+            }, [filteredBookings, filteredBills, paymentLog, utilityLog]);
 
             const allGuestsSorted = useMemo(() => {
                 const s = historySearch.toLowerCase();
@@ -421,12 +486,26 @@
             }, [user]);
 
             const handleCellClick = (room, date) => {
-                const end = new Date(date); end.setDate(date.getDate() + 1);
+                const end = new Date(date); end.setMonth(date.getMonth() + 1);
                 setEditingId(null); setFormData({ guestName: '', contact: '', room: room.name, property: room.property, start: toISODate(date), end: toISODate(end), monthlyRate: 5000, isFixedPrice: false, manualStatus: 'auto', notes: '', depositAmt: 0, depositCollected: false, depositRefunded: false }); setShowModal(true);
             };
 
-            const handleSaveBooking = async (e) => { e.preventDefault(); const newB = editingId ? bookings.map(b => b.id === editingId ? { ...formData, id: editingId } : b) : [...bookings, { ...formData, id: Date.now().toString(), manualStatus: 'auto', notes: '' }]; setBookings(newB); await syncData({ bookings: newB }); setShowModal(false); };
-            const executeDelete = async () => { if (!deleteTarget) return; if (deleteTarget.type === 'booking') { const n = bookings.filter(x => x.id !== deleteTarget.id); setBookings(n); await syncData({ bookings: n }); setShowModal(false); } else if (deleteTarget.type === 'bill') { const n = bills.filter(b => b.id !== deleteTarget.id); setBills(n); await syncData({ bills: n }); } setDeleteTarget(null); };
+            const handleSaveBooking = async (e) => { e.preventDefault(); const newB = editingId ? bookings.map(b => b.id === editingId ? { ...formData, id: editingId } : b) : [...bookings, { ...formData, id: Date.now().toString() }]; setBookings(newB); await syncData({ bookings: newB }); setShowModal(false); };
+            const executeDelete = async () => { 
+                if (!deleteTarget) return; 
+                if (deleteTarget.type === 'booking') { 
+                    const n = bookings.filter(x => x.id !== deleteTarget.id); setBookings(n); await syncData({ bookings: n }); setShowModal(false); 
+                } else if (deleteTarget.type === 'bill') { 
+                    const n = bills.filter(b => b.id !== deleteTarget.id); setBills(n); await syncData({ bills: n }); 
+                } else if (deleteTarget.type === 'payment') {
+                    if (deleteTarget.txType === 'IN') {
+                        await deletePayLocal(deleteTarget.payload.bid, deleteTarget.payload.m, deleteTarget.payload.y, deleteTarget.payload.pid);
+                    } else {
+                        await handleBillPaymentDelete(deleteTarget.payload.billId, deleteTarget.payload.pid);
+                    }
+                }
+                setDeleteTarget(null); 
+            };
             const addPayLocal = async (bid, m, y, amt) => { const k = `${bid}_${m}_${y}`, n = { ...paymentLog, [k]: [...(paymentLog[k] || []), { id: Date.now().toString(), amount: Number(amt), date: toISODate(new Date()) }] }; setPaymentLog(n); await syncData({ paymentLog: n }); };
             const updatePayLocal = async (bid, m, y, pid, f, v) => { const k = `${bid}_${m}_${y}`, n = { ...paymentLog, [k]: (paymentLog[k] || []).map(p => p.id === pid ? {...p, [f]: f === 'amount' ? (v === '' ? 0 : Number(v)) : v} : p) }; setPaymentLog(n); await syncData({ paymentLog: n }); };
             const deletePayLocal = async (bid, m, y, pid) => { const k = `${bid}_${m}_${y}`, n = { ...paymentLog, [k]: (paymentLog[k] || []).filter(p => p.id !== pid) }; setPaymentLog(n); await syncData({ paymentLog: n }); };
@@ -439,6 +518,54 @@
 
             const isTodayInViewNow = calendarDays.some(d => toISODate(d) === toISODate(TODAY));
             const todayOffsetNow = isTodayInViewNow ? Math.floor((TODAY.getTime() - calendarStart.getTime()) / 86400000) : null;
+
+            const renderTransaction = (item, idx) => {
+                const isEditing = editingTransaction && editingTransaction.pid === item.payload.pid;
+                
+                if (isEditing) {
+                    return (
+                        <tr key={item.payload.pid || idx} className="bg-indigo-50 font-black uppercase shadow-inner border-y border-indigo-100">
+                            <td className="td-custom px-2 py-1.5 w-[140px]">
+                                <input type="date" className="input-base py-1 px-2 w-full text-[14px] bg-white" value={editingTransaction.date} onChange={e => setEditingTransaction({...editingTransaction, date: e.target.value})} />
+                            </td>
+                            <td className="td-custom text-indigo-700">{item.label}</td>
+                            <td className="td-custom text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                    <span className="text-indigo-400">฿</span>
+                                    <input type="number" step="0.01" className="input-base py-1 px-2 w-[100px] text-[14px] text-right bg-white" value={editingTransaction.amount === 0 ? '' : editingTransaction.amount} onChange={e => setEditingTransaction({...editingTransaction, amount: Number(e.target.value)})} />
+                                    <button onClick={() => {
+                                        if(item.type === 'IN') {
+                                            updatePayLocal(item.payload.bid, item.payload.m, item.payload.y, item.payload.pid, 'amount', editingTransaction.amount);
+                                            updatePayLocal(item.payload.bid, item.payload.m, item.payload.y, item.payload.pid, 'date', editingTransaction.date);
+                                        } else {
+                                            handleBillPaymentUpdate(item.payload.billId, item.payload.pid, 'amount', editingTransaction.amount);
+                                            handleBillPaymentUpdate(item.payload.billId, item.payload.pid, 'date', editingTransaction.date);
+                                        }
+                                        setEditingTransaction(null);
+                                    }} className="bg-emerald-500 text-white hover:bg-emerald-600 p-1.5 rounded-lg ml-2 shadow-sm transition-all active:scale-95" title="Save"><Icon name="Check" size={16}/></button>
+                                    <button onClick={() => setEditingTransaction(null)} className="bg-slate-200 text-slate-600 hover:bg-slate-300 p-1.5 rounded-lg shadow-sm transition-all active:scale-95" title="Cancel"><Icon name="X" size={16}/></button>
+                                </div>
+                            </td>
+                        </tr>
+                    );
+                }
+
+                return (
+                    <tr key={item.payload.pid || idx} className="hover:bg-slate-50 font-black uppercase transition-colors">
+                        <td className="td-custom text-slate-500 w-[140px]">{item.date}</td>
+                        <td className="td-custom">{item.label}</td>
+                        <td className={`td-custom text-right ${item.type==='IN'?'text-emerald-600':'text-rose-600'}`}>
+                            <div className="flex items-center justify-end gap-3">
+                                <span>{item.type==='IN'?'+':'-'}฿{item.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                <div className="flex gap-1">
+                                    <button onClick={(e) => { e.stopPropagation(); setEditingTransaction({ pid: item.payload.pid, date: item.date, amount: item.amount }); }} className="text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors p-1.5 rounded-md" title="Edit"><Icon name="Pencil" size={16}/></button>
+                                    <button onClick={(e) => { e.stopPropagation(); setDeleteTarget({ type: 'payment', txType: item.type, payload: item.payload }); }} className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors p-1.5 rounded-md" title="Delete"><Icon name="Trash" size={16}/></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                );
+            };
 
             if (!hasLoaded) return <div className="min-h-screen flex items-center justify-center font-black text-indigo-700 animate-pulse uppercase">Syncing...</div>;
 
@@ -484,12 +611,12 @@
                             <div className="space-y-1 animate-in fade-in duration-300">
                                 <div className="flex items-center justify-between px-2 py-0.5">
                                     <div className="flex items-center gap-3 bg-white/60 border border-slate-200 px-4 py-1.5 rounded-xl uppercase tracking-tighter shadow-sm text-slate-400 text-[12px]">
-                                        <div className="flex items-center gap-1"><Icon name="Clock" size={13} className="text-blue-500" /> FUTURE</div>
-                                        <div className="flex items-center gap-1"><Icon name="Home" size={13} className="text-emerald-500" /> IN</div>
-                                        <div className="flex items-center gap-1"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> OUT</div>
+                                        <div className="flex items-center gap-1"><Icon name="Clock" size={13} className="text-blue-500" /> {t('FUTURE')}</div>
+                                        <div className="flex items-center gap-1"><Icon name="Home" size={13} className="text-emerald-500" /> {t('IN')}</div>
+                                        <div className="flex items-center gap-1"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> {t('OUT')}</div>
                                         <div className="w-px h-3 bg-slate-300 mx-1" />
-                                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-400" /> OWES</div>
-                                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /> PAID</div>
+                                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-400" /> {t('OWES')}</div>
+                                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /> {t('PAID')}</div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center bg-white p-0.5 rounded-xl border border-slate-300 shadow-sm">
@@ -510,7 +637,7 @@
                                     <div className="overflow-x-auto no-scrollbar">
                                         <div className="relative" style={{ width: `calc(85px + ${daysInView * 25}px)` }}>
                                             <div className="grid border-b-2 border-slate-400 bg-slate-50 sticky top-0 z-40 font-black" style={{ gridTemplateColumns: `85px repeat(${daysInView}, 25px)` }}>
-                                                <div className="p-1 text-slate-400 text-[14px] border-r-2 border-slate-400 sticky left-0 z-50 bg-slate-50 text-center flex items-center justify-center uppercase">Unit</div>
+                                                <div className="p-1 text-slate-400 text-[14px] border-r-2 border-slate-400 sticky left-0 z-50 bg-slate-50 text-center flex items-center justify-center uppercase">{t('UNIT')}</div>
                                                 {calendarDays.map((d, i) => {
                                                     const dateStr = toISODate(d);
                                                     const isToday = dateStr === toISODate(TODAY);
@@ -558,10 +685,11 @@
                                                                 const overdue = schedule.filter(s => new Date(s.dueDate) <= TODAY).reduce((sum, s) => sum + (Number(s.owed)-Number(s.paid)), 0);
                                                                 const s = getStatus(booking);
                                                                 return (
-                                                                    <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1 border border-white/20 flex items-center z-20 cursor-pointer text-white shadow-md uppercase transition-all hover:scale-[1.01] ${getBarColor(booking, overdue)} ${bS >= viewS ? 'rounded-l-lg' : ''} ${bE <= viewE ? 'rounded-r-lg' : ''}`} style={{ left: `calc(85px + ${offsetS * 25}px + 1px)`, right: `calc(${ (daysInView - 1 - offsetE) * 25}px + 1px)` }}>
+                                                                    <div key={booking.id} onClick={(e) => { e.stopPropagation(); setEditingId(booking.id); setFormData({...booking}); setShowModal(true); }} className={`absolute inset-y-1 border border-white/20 flex items-center z-20 cursor-pointer text-white shadow-md uppercase transition-all hover:scale-[1.01] ${getBarColor(booking, overdue)} ${bS >= viewS ? 'rounded-l-lg' : ''} ${bE <= viewE ? 'rounded-r-lg' : ''}`} style={{ left: `calc(85px + ${offsetS * 25}px + ${bS >= viewS ? 12.5 : 1}px)`, right: `calc(${ (daysInView - 1 - offsetE) * 25}px + ${bE <= viewE ? 12.5 : 1}px)` }}>
                                                                         <div className="flex items-center w-full justify-between gap-1 text-[17px] font-black relative h-full px-1 overflow-hidden">
                                                                             <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
-                                                                                {bS < viewS ? <span className="shrink-0 text-[10px] font-black mr-1">🡄 PREV</span> : <div className={`w-2.5 h-2.5 rounded-full shrink-0 border border-white/30 ${overdue > 0 ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} />}
+                                                                                {bS < viewS && <span className="shrink-0 text-[10px] font-black mr-1">🡄 PREV</span>}
+                                                                                <div className={`w-2.5 h-2.5 rounded-full shrink-0 border border-white/30 ${overdue > 0 ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} />
                                                                                 <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
                                                                                 <span className="truncate">{booking.guestName} ({formatBarDate(booking.start)} - {formatBarDate(booking.end)})</span>
                                                                                 <span className="shrink-0 opacity-40 mx-0.5">|</span>
@@ -592,12 +720,12 @@
                                         bookings.forEach(b => {
                                             const s = new Date(b.start), e = new Date(b.end);
                                             const status = getStatus(b).id;
-                                            if (s <= horizon && status !== 'checked-in' && status !== 'checked-out') feed.push({ date: b.start, type: 'IN', label: `${b.guestName} (${b.room})`, icon: 'Home', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', b });
-                                            if (e <= horizon && status !== 'checked-out') feed.push({ date: b.end, type: 'OUT', label: `${b.guestName} (${b.room})`, icon: 'CheckCircle2', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', b });
+                                            if (s <= horizon && status !== 'checked-in' && status !== 'checked-out') feed.push({ date: b.start, type: t('IN'), label: `${b.guestName} (${b.room})`, icon: 'Home', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', b });
+                                            if (e <= horizon && status !== 'checked-out') feed.push({ date: b.end, type: t('OUT'), label: `${b.guestName} (${b.room})`, icon: 'CheckCircle2', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', b });
                                         });
                                         bookings.forEach(b => {
                                             getPaymentSchedule(b).filter(ps => ps.owed - ps.paid > 0 && new Date(ps.dueDate) <= horizon).forEach(ps => {
-                                                feed.push({ date: ps.dueDate, type: 'RENT', label: `${b.guestName} (${b.room}) OWES ฿${(ps.owed-ps.paid).toLocaleString()}`, icon: 'Wallet', color: 'text-orange-600', bg: 'bg-emerald-50', border: 'border-orange-100', b });
+                                                feed.push({ date: ps.dueDate, type: t('RENT'), label: `${b.guestName} (${b.room}) ${t('OWES')} ฿${(ps.owed-ps.paid).toLocaleString()}`, icon: 'Wallet', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', b });
                                             });
                                         });
                                         filteredBills.filter(bill => {
@@ -607,7 +735,7 @@
                                         }).forEach(bill => {
                                             const paid = (bill.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
                                             const balance = (Number(bill.amount) || 0) - paid;
-                                            feed.push({ date: bill.dueDate, type: 'BILL', label: `${bill.category} (${bill.property}) DUE ฿${balance.toLocaleString()}`, icon: 'Receipt', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' });
+                                            feed.push({ date: bill.dueDate, type: t('BILL'), label: `${bill.category} (${bill.property}) ${t('DUE')} ฿${balance.toLocaleString()}`, icon: 'Receipt', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' });
                                         });
                                         const grouped = feed.sort((a,b) => new Date(a.date) - new Date(b.date)).reduce((acc, item) => {
                                             if (!acc[item.date]) acc[item.date] = [];
@@ -637,44 +765,190 @@
                                 <div className="card-standard max-w-xl mx-auto">
                                     <div className="p-3 bg-slate-50 border-b flex items-center gap-2 uppercase tracking-widest text-indigo-700"><Icon name="LayoutDashboard" size={18}/> {t('VACANCY_REPORT')}</div>
                                     <div className="divide-y divide-slate-100">
-                                        {rooms.map(room => {
-                                            const rb = bookings.filter(b => b.room === room.name).sort((a,b) => (a?.start || "").localeCompare(b?.start || ""));
-                                            let last = new Date(TODAY); const list = [];
-                                            rb.forEach(b => { const s = new Date(b.start); if(s > last) list.push({f: new Date(last), t: s}); if(new Date(b.end) > last) last = new Date(b.end); });
-                                            list.push({f: new Date(last), t: null});
-                                            return list.map((gap, i) => (
-                                                <div key={`${room.id}-${i}`} className="p-3 flex items-center gap-4 hover:bg-slate-50">
-                                                    <span className="text-[17px] text-indigo-700 w-24 truncate shrink-0">{room.name}</span>
+                                        {(() => {
+                                            const allGaps = [];
+                                            rooms.forEach(room => {
+                                                const rb = bookings.filter(b => b.room === room.name).sort((a,b) => (a?.start || "").localeCompare(b?.start || ""));
+                                                let last = new Date(TODAY);
+                                                rb.forEach(b => { 
+                                                    const s = new Date(b.start); 
+                                                    if(s > last) allGaps.push({ room: room.name, roomId: room.id, f: new Date(last), t: s }); 
+                                                    if(new Date(b.end) > last) last = new Date(b.end); 
+                                                });
+                                                allGaps.push({ room: room.name, roomId: room.id, f: new Date(last), t: null });
+                                            });
+                                            
+                                            allGaps.sort((a, b) => a.f.getTime() - b.f.getTime());
+                                            
+                                            return allGaps.map((gap, i) => (
+                                                <div key={`${gap.roomId}-${i}`} className="p-3 flex items-center gap-4 hover:bg-slate-50">
+                                                    <span className="text-[17px] text-indigo-700 w-24 truncate shrink-0">{gap.room}</span>
                                                     <div className="flex items-center gap-2 uppercase text-slate-400 text-[14px] flex-1">
-                                                        <span>From: <b className="text-slate-800">{formatBarDate(gap.f)}</b></span>
+                                                        <span>{t('FROM')} <b className="text-slate-800">{formatBarDate(gap.f)}</b></span>
                                                         <span>→</span>
                                                         <span className="flex items-center gap-1.5">{gap.t ? <b className="text-slate-800">{formatBarDate(gap.t)}</b> : <span className="text-[28px] leading-none text-emerald-500">∞</span>}</span>
                                                     </div>
                                                     <span className={`px-3 py-1 rounded-full text-[11px] uppercase ${gap.t ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>{gap.t ? t('WINDOW') : t('OPEN')}</span>
                                                 </div>
                                             ));
-                                        })}
+                                        })()}
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {activeTab === 'bills' && (
-                            <div className="space-y-2 p-2 max-w-[1800px] mx-auto animate-in fade-in font-black">
-                                <div className="flex flex-wrap items-center justify-between px-2 mb-2 gap-2">
+                            <div className="space-y-4 p-2 max-w-[1800px] mx-auto animate-in fade-in font-black">
+                                <div className="flex flex-wrap items-center justify-between px-2 gap-2">
                                     <h2 className="text-[18px] font-black uppercase text-indigo-700 flex items-center gap-2"><Icon name="Receipt" size={20}/> {t('MANAGE_EXPENSES')}</h2>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2 text-slate-400 text-[12px]"><input type="checkbox" checked={showAllBills} onChange={e => setShowAllBills(e.target.checked)} id="historyCheck" className="w-4 h-4 rounded" /><label htmlFor="historyCheck" className="cursor-pointer font-black uppercase">Show All History</label></div>
-                                        <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-300 flex items-center gap-2 shadow-sm font-black text-indigo-700"><Icon name="Search" size={16} className="text-slate-400" /><select className="bg-transparent outline-none cursor-pointer font-condensed text-[16px]" value={selectedBillCategory} onChange={e => setSelectedBillCategory(e.target.value)}><option value="All">{t('CAT_FILTER')}</option>{BILL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></div>
+                                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                                        <div className="flex items-center gap-2 text-slate-500 text-[13px] bg-white px-3 py-1.5 rounded-xl border border-slate-300 shadow-sm">
+                                            <input type="checkbox" checked={showFutureBills} onChange={e => setShowFutureBills(e.target.checked)} id="futureCheck" className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
+                                            <label htmlFor="futureCheck" className="cursor-pointer font-black uppercase">{lang === 'th' ? 'แสดงบิลล่วงหน้า' : 'Future Bills'}</label>
+                                        </div>
+                                        <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-300 flex items-center gap-2 shadow-sm font-black text-indigo-700">
+                                            <select className="bg-transparent outline-none cursor-pointer font-condensed text-[14px] uppercase" value={billStatusFilter} onChange={e => setBillStatusFilter(e.target.value)}>
+                                                <option value="All">{lang === 'th' ? 'ทั้งหมด (Paid & Unpaid)' : 'All (Paid & Unpaid)'}</option>
+                                                <option value="Unpaid">{t('OWES')} (Unpaid)</option>
+                                                <option value="Paid">{t('PAID')}</option>
+                                            </select>
+                                        </div>
+                                        <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-300 flex items-center gap-2 shadow-sm font-black text-indigo-700">
+                                            <Icon name="Search" size={16} className="text-slate-400" />
+                                            <select className="bg-transparent outline-none cursor-pointer font-condensed text-[14px] uppercase" value={selectedBillCategory} onChange={e => setSelectedBillCategory(e.target.value)}>
+                                                <option value="All">{t('CAT_FILTER')}</option>
+                                                {BILL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}
+                                            </select>
+                                        </div>
                                         <button onClick={() => { setBillFormData({title:'', category:'Electric', property: (selectedProperty==='All'?properties[0]:selectedProperty), amount:0, dueDate:toISODate(TODAY), payments:[]}); setShowBillModal(true); }} className="btn-action">+ {t('NEW_BILL')}</button>
                                     </div>
                                 </div>
-                                <div className="card-standard"><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="th-custom">{t('CATEGORY')}</th><th className="th-custom">{t('PROPERTY')}</th><th className="th-custom">{t('DUE_DATE')}</th><th className="th-custom">{t('AMOUNT')}</th><th className="th-custom">{t('AMT_DUE')}</th><th className="th-custom text-right"></th></tr></thead><tbody className="divide-y divide-slate-100">{filteredBills.map(bill => {
-                                    const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
-                                    const catInfo = BILL_CATEGORIES.find(c => c.id === bill.category);
-                                    return (<Fragment key={bill.id}><tr className={`hover:bg-slate-50 transition-colors ${isExp ? 'bg-indigo-50/30' : ''}`}><td className="td-custom"><div className="flex items-center gap-2"><div className={`p-1.5 rounded-lg ${bal<=0?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}`}><Icon name={catInfo?.icon || 'Receipt'} size={18}/></div><span>{lang==='th' ? catInfo?.labelTh : bill.category}</span></div></td><td className="td-custom opacity-70">{bill.property}</td><td className="td-custom opacity-70 uppercase">{formatRemDate(bill.dueDate)}</td><td className="td-custom">฿{Number(bill.amount || 0).toLocaleString()}</td><td className={`td-custom ${bal > 0 ? 'text-rose-600' : 'text-emerald-600 opacity-50'}`}>฿{bal.toLocaleString()}</td><td className="td-custom text-right"><div className="flex justify-end gap-1">{bal > 0 && (<button onClick={() => handleQuickBillPay(bill)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Icon name="Check" size={20}/></button>)}<button onClick={() => setShowBillLedgerId(isExp ? null : bill.id)} className={`p-1.5 rounded-lg transition-colors ${isExp ? 'bg-indigo-600 text-white' : 'text-indigo-600 hover:bg-indigo-50'}`}><Icon name="Pencil" size={20}/></button><button onClick={() => duplicateBill(bill)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><Icon name="Copy" size={20}/></button><button onClick={() => setDeleteTarget({type: 'bill', id: bill.id})} className="p-1.5 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={20}/></button></div></td></tr>
-                                    {isExp && (<tr><td colSpan="6" className="p-0 bg-white border-b"><div className="p-3 bg-indigo-50/50 space-y-3 animate-in slide-in-from-top-2 duration-200"><div className="flex flex-wrap items-end gap-2"><div className="w-[140px]"><label className="badge-label">{t('CATEGORY')}</label><select className="input-base w-full p-1.5 text-[15px] font-condensed" value={bill.category} onChange={e=>handleBillUpdateField(bill.id, 'category', e.target.value)}>{BILL_CATEGORIES.map(c=><option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></div><div className="w-[140px]"><label className="badge-label">{t('PROPERTY')}</label><select className="input-base w-full p-1.5 text-[15px] font-condensed" value={bill.property} onChange={e=>handleBillUpdateField(bill.id, 'property', e.target.value)}>{properties.map(p=><option key={p} value={p}>{p}</option>)}</select></div><div className="w-[140px]"><label className="badge-label">{t('DUE_DATE')}</label><input type="date" className="input-base w-full p-1.5 text-[15px] font-condensed" value={bill.dueDate} onChange={e=>handleBillUpdateField(bill.id, 'dueDate', e.target.value)} /></div><div className="w-[120px]"><label className="badge-label">{t('AMOUNT')}</label><input type="number" step="0.01" className="input-base w-full p-1.5 text-[15px] font-condensed" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} /></div><div className="flex-1 min-w-[200px]"><label className="badge-label">{t('DESC')}</label><input className="input-base w-full p-1.5 text-[15px] font-condensed" placeholder="Details..." value={bill.title||''} onChange={e=>handleBillUpdateField(bill.id, 'title', e.target.value)} /></div></div><div className="border-t border-indigo-200 pt-2"><p className="badge-label mb-1">Payments Log</p><div className="space-y-1">{(bill.payments || []).map(p => (<div key={p.id} className="flex items-center gap-2"><input type="date" className="input-base py-1 px-2 text-[14px] font-condensed w-[130px]" value={p.date} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'date', e.target.value)} /><div className="relative w-[110px]"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-[12px]">฿</span><input type="number" step="0.01" className="input-base py-1 pl-4 pr-1 text-[14px] font-condensed w-full" value={p.amount === 0 ? '' : p.amount} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} /></div><button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Icon name="Trash" size={16}/></button></div>))}</div></div></div></td></tr>)}</Fragment>);
-                                })}</tbody></table></div></div>
+                                
+                                <div className="card-standard">
+                                    <div className="bg-slate-50 px-4 py-2 border-b flex items-center gap-2 text-indigo-700 uppercase tracking-widest"><Icon name="BellRing" size={16}/> {lang === 'th' ? 'บิลปัจจุบัน' : 'CURRENT'}</div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead><tr><th className="th-custom">{t('CATEGORY')}</th><th className="th-custom">{t('PROPERTY')}</th><th className="th-custom">{t('DUE_DATE')}</th><th className="th-custom">{t('AMOUNT')}</th><th className="th-custom">{t('AMT_DUE')}</th><th className="th-custom text-right"></th></tr></thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {currentBills.length === 0 ? <tr><td colSpan="6" className="text-center p-4 text-slate-400">{lang === 'th' ? 'ไม่มีบิล' : 'No bills found'}</td></tr> : currentBills.map(bill => {
+                                                    const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
+                                                    const catInfo = BILL_CATEGORIES.find(c => c.id === bill.category);
+                                                    return (<Fragment key={bill.id}>
+                                                        {isExp ? (
+                                                            <tr className="bg-indigo-50 font-black uppercase shadow-inner border-y border-indigo-100">
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.category} onChange={e=>handleBillUpdateField(bill.id, 'category', e.target.value)}>{BILL_CATEGORIES.map(c=><option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.property} onChange={e=>handleBillUpdateField(bill.id, 'property', e.target.value)}>{properties.map(p=><option key={p} value={p}>{p}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><input type="date" className="input-base py-1 px-1 w-full min-w-[110px] text-[14px] bg-white font-condensed" value={bill.dueDate} onChange={e=>handleBillUpdateField(bill.id, 'dueDate', e.target.value)} /></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><input type="number" step="0.01" className="input-base py-1 px-1 w-full min-w-[80px] text-[14px] bg-white font-condensed text-right" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} /></td>
+                                                                <td className={`td-custom px-2 py-1.5 whitespace-nowrap ${bal > 0 ? 'text-rose-600' : 'text-emerald-600 opacity-50'}`}>฿{bal.toLocaleString()}</td>
+                                                                <td className="td-custom text-right px-1.5 py-1.5"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(null)} className="bg-emerald-500 text-white hover:bg-emerald-600 p-1.5 rounded-lg shadow-sm transition-all active:scale-95" title="Done"><Icon name="Check" size={16}/></button></div></td>
+                                                            </tr>
+                                                        ) : (
+                                                            <tr className="hover:bg-slate-50 transition-colors">
+                                                                <td className="td-custom"><div className="flex items-center gap-2"><div className={`p-1.5 rounded-lg ${bal<=0?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}`}><Icon name={catInfo?.icon || 'Receipt'} size={18}/></div><span>{lang==='th' ? catInfo?.labelTh : bill.category}</span></div></td>
+                                                                <td className="td-custom opacity-70">{bill.property}</td>
+                                                                <td className="td-custom opacity-70 uppercase">{formatRemDate(bill.dueDate)}</td>
+                                                                <td className="td-custom">฿{Number(bill.amount || 0).toLocaleString()}</td>
+                                                                <td className={`td-custom ${bal > 0 ? 'text-rose-600' : 'text-emerald-600 opacity-50'}`}>฿{bal.toLocaleString()}</td>
+                                                                <td className="td-custom text-right"><div className="flex justify-end gap-1">{bal > 0 && (<button onClick={() => handleQuickBillPay(bill)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Icon name="Check" size={20}/></button>)}<button onClick={() => setShowBillLedgerId(bill.id)} className="p-1.5 rounded-lg transition-colors text-indigo-600 hover:bg-indigo-50"><Icon name="Pencil" size={20}/></button><button onClick={() => duplicateBill(bill)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><Icon name="Copy" size={20}/></button><button onClick={() => setDeleteTarget({type: 'bill', id: bill.id})} className="p-1.5 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={20}/></button></div></td>
+                                                            </tr>
+                                                        )}
+                                                        {isExp && (
+                                                            <tr>
+                                                                <td colSpan="6" className="p-0 bg-white border-b">
+                                                                    <div className="p-3 bg-indigo-50/30 space-y-3 animate-in slide-in-from-top-2 duration-200 shadow-inner">
+                                                                        <div className="flex items-center gap-2 max-w-3xl">
+                                                                            <label className="badge-label shrink-0 !mb-0 w-[80px]">{t('DESC')}</label>
+                                                                            <input className="input-base flex-1 py-1.5 px-3 text-[15px] font-condensed bg-white" placeholder="Details..." value={bill.title||''} onChange={e=>handleBillUpdateField(bill.id, 'title', e.target.value)} />
+                                                                        </div>
+                                                                        <div className="border-t border-indigo-100 pt-3 mt-1">
+                                                                            <p className="badge-label mb-2 text-indigo-500">Payments Log</p>
+                                                                            <div className="space-y-1">
+                                                                                {(bill.payments || []).map(p => (
+                                                                                    <div key={p.id} className="flex gap-2 items-center bg-emerald-50/60 p-1.5 rounded-lg mb-1.5 border border-emerald-100 max-w-lg">
+                                                                                        <input type="date" className="w-[135px] bg-white border border-emerald-200 rounded-md text-[16px] px-2 py-1 font-condensed text-emerald-900 outline-none" value={p.date} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'date', e.target.value)} />
+                                                                                        <div className="flex-1 relative flex items-center">
+                                                                                            <span className="absolute left-2 text-emerald-700 text-[16px]">฿</span>
+                                                                                            <input type="number" step="0.01" className="w-full bg-white border border-emerald-200 rounded-md text-[16px] text-emerald-700 font-black pl-6 pr-2 py-1 text-right outline-none" value={p.amount === 0 ? '' : p.amount} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} />
+                                                                                        </div>
+                                                                                        <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-500 px-1 hover:scale-110 transition-transform"><Icon name="Trash" size={22}/></button>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </Fragment>);
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div className="card-standard">
+                                    <div className="bg-slate-50 px-4 py-2 border-b flex items-center gap-2 text-slate-500 uppercase tracking-widest"><Icon name="History" size={16}/> {t('HISTORY')}</div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead><tr><th className="th-custom">{t('CATEGORY')}</th><th className="th-custom">{t('PROPERTY')}</th><th className="th-custom">{t('DUE_DATE')}</th><th className="th-custom">{t('AMOUNT')}</th><th className="th-custom">{t('AMT_DUE')}</th><th className="th-custom text-right"></th></tr></thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {historyBills.length === 0 ? <tr><td colSpan="6" className="text-center p-4 text-slate-400">{lang === 'th' ? 'ไม่มีบิลประวัติ' : 'No history found'}</td></tr> : historyBills.map(bill => {
+                                                    const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
+                                                    const catInfo = BILL_CATEGORIES.find(c => c.id === bill.category);
+                                                    return (<Fragment key={bill.id}>
+                                                        {isExp ? (
+                                                            <tr className="bg-slate-100 font-black uppercase shadow-inner border-y border-slate-200">
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.category} onChange={e=>handleBillUpdateField(bill.id, 'category', e.target.value)}>{BILL_CATEGORIES.map(c=><option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.property} onChange={e=>handleBillUpdateField(bill.id, 'property', e.target.value)}>{properties.map(p=><option key={p} value={p}>{p}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><input type="date" className="input-base py-1 px-1 w-full min-w-[110px] text-[14px] bg-white font-condensed" value={bill.dueDate} onChange={e=>handleBillUpdateField(bill.id, 'dueDate', e.target.value)} /></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><input type="number" step="0.01" className="input-base py-1 px-1 w-full min-w-[80px] text-[14px] bg-white font-condensed text-right" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} /></td>
+                                                                <td className={`td-custom px-2 py-1.5 whitespace-nowrap ${bal > 0 ? 'text-rose-600' : 'text-slate-400 opacity-50'}`}>฿{bal.toLocaleString()}</td>
+                                                                <td className="td-custom text-right px-1.5 py-1.5"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(null)} className="bg-emerald-500 text-white hover:bg-emerald-600 p-1.5 rounded-lg shadow-sm transition-all active:scale-95" title="Done"><Icon name="Check" size={16}/></button></div></td>
+                                                            </tr>
+                                                        ) : (
+                                                            <tr className="hover:bg-slate-50 transition-colors">
+                                                                <td className="td-custom"><div className="flex items-center gap-2"><div className={`p-1.5 rounded-lg ${bal<=0?'bg-slate-200 text-slate-600':'bg-rose-50 text-rose-600'}`}><Icon name={catInfo?.icon || 'Receipt'} size={18}/></div><span className="text-slate-600">{lang==='th' ? catInfo?.labelTh : bill.category}</span></div></td>
+                                                                <td className="td-custom opacity-50">{bill.property}</td>
+                                                                <td className="td-custom opacity-50 uppercase">{formatRemDate(bill.dueDate)}</td>
+                                                                <td className="td-custom text-slate-500">฿{Number(bill.amount || 0).toLocaleString()}</td>
+                                                                <td className={`td-custom ${bal > 0 ? 'text-rose-600' : 'text-slate-400 opacity-50'}`}>฿{bal.toLocaleString()}</td>
+                                                                <td className="td-custom text-right"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(bill.id)} className="p-1.5 rounded-lg transition-colors text-slate-400 hover:bg-slate-200"><Icon name="Pencil" size={20}/></button><button onClick={() => setDeleteTarget({type: 'bill', id: bill.id})} className="p-1.5 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={20}/></button></div></td>
+                                                            </tr>
+                                                        )}
+                                                        {isExp && (
+                                                            <tr>
+                                                                <td colSpan="6" className="p-0 bg-white border-b">
+                                                                    <div className="p-3 bg-slate-50 space-y-3 animate-in slide-in-from-top-2 duration-200 shadow-inner">
+                                                                        <div className="flex items-center gap-2 max-w-3xl">
+                                                                            <label className="badge-label shrink-0 !mb-0 w-[80px]">{t('DESC')}</label>
+                                                                            <input className="input-base flex-1 py-1.5 px-3 text-[15px] font-condensed bg-white" placeholder="Details..." value={bill.title||''} onChange={e=>handleBillUpdateField(bill.id, 'title', e.target.value)} />
+                                                                        </div>
+                                                                        <div className="border-t border-slate-200 pt-3 mt-1">
+                                                                            <p className="badge-label mb-2 text-slate-500">Payments Log</p>
+                                                                            <div className="space-y-1">
+                                                                                {(bill.payments || []).map(p => (
+                                                                                    <div key={p.id} className="flex gap-2 items-center bg-emerald-50/60 p-1.5 rounded-lg mb-1.5 border border-emerald-100 max-w-lg">
+                                                                                        <input type="date" className="w-[135px] bg-white border border-emerald-200 rounded-md text-[16px] px-2 py-1 font-condensed text-emerald-900 outline-none" value={p.date} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'date', e.target.value)} />
+                                                                                        <div className="flex-1 relative flex items-center">
+                                                                                            <span className="absolute left-2 text-emerald-700 text-[16px]">฿</span>
+                                                                                            <input type="number" step="0.01" className="w-full bg-white border border-emerald-200 rounded-md text-[16px] text-emerald-700 font-black pl-6 pr-2 py-1 text-right outline-none" value={p.amount === 0 ? '' : p.amount} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} />
+                                                                                        </div>
+                                                                                        <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-500 px-1 hover:scale-110 transition-transform"><Icon name="Trash" size={22}/></button>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </Fragment>);
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -689,11 +963,11 @@
                                         <table className="w-full text-left table-fixed">
                                             <thead>
                                                 <tr>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[25%]" onClick={() => handleSortClick('guestName')}>Guest {getSortIcon('guestName')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[20%]" onClick={() => handleSortClick('property')}>Property {getSortIcon('property')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSortClick('room')}>Room {getSortIcon('room')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSortClick('start')}>Start {getSortIcon('start')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSortClick('end')}>End {getSortIcon('end')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[25%]" onClick={() => handleSort('guestName')}>{t('GUEST')} {getSortIcon('guestName')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[20%]" onClick={() => handleSort('property')}>{t('PROPERTY')} {getSortIcon('property')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('room')}>{t('UNIT')} {getSortIcon('room')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('start')}>{t('START')} {getSortIcon('start')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('end')}>{t('END')} {getSortIcon('end')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y text-[15px]">
@@ -715,9 +989,77 @@
 
                         {activeTab === 'accounting' && (
                             <div className="p-2 max-w-[1800px] mx-auto space-y-4 animate-in fade-in duration-500 font-black">
-                                <div className="grid grid-cols-1 min-[500px]:grid-cols-3 gap-2"><div className="bg-white p-3 rounded-2xl border border-slate-300 shadow-sm font-black"><p className="badge-label !ml-0 !mb-0 text-[15px]">{t('TOTAL_INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.income.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div><div className="bg-white p-3 rounded-2xl border border-slate-300 shadow-sm font-black"><p className="badge-label !ml-0 !mb-0 text-[15px]">{t('TOTAL_EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.expense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div><div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-xl font-black"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">Current Net</p><h2 className="text-[20px]">฿{accountingData.net.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div></div>
-                                <div className="card-standard"><div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">{t('LEDGER')}</div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="th-custom">Date</th><th className="th-custom">Reference</th><th className="th-custom text-right">Amount</th></tr></thead><tbody className="divide-y text-[15px]">{accountingData.monthLedger.map((item, idx) => (<tr key={idx} className="hover:bg-slate-50 font-black uppercase"><td className="td-custom text-slate-400">{item.date}</td><td className="td-custom">{item.label}</td><td className={`td-custom text-right ${item.type==='IN'?'text-emerald-600':'text-rose-600'}`}>{item.type==='IN'?'+':'-'}฿{item.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>))}</tbody></table></div></div>
-                                <div className="card-standard"><div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">{t('HISTORY')}</div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="th-custom">Month</th><th className="th-custom">Income</th><th className="th-custom">Expense</th><th className="th-custom text-right">Net</th></tr></thead><tbody className="divide-y text-[15px]">{accountingData.history.map((h, i) => (<tr key={i} className="hover:bg-indigo-50 cursor-pointer font-black"><td className="td-custom uppercase">{h.label}</td><td className="td-custom text-emerald-600">฿{h.inc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td className="td-custom text-rose-600">฿{h.exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td><td className={`td-custom text-right ${h.inc-h.exp>=0?'text-emerald-700':'text-rose-700'}`}>฿{(h.inc-h.exp).toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>))}</tbody></table></div></div>
+                                <div className="space-y-3">
+                                    <div className="bg-slate-200/50 p-3 rounded-3xl border border-slate-200">
+                                        <h3 className="text-[14px] uppercase text-slate-500 font-black tracking-widest px-2 mb-2">{t('CUMULATIVE')}</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.income.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.expense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p><h2 className="text-[20px] text-amber-500">฿{accountingData.pending.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.net.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-indigo-50/70 p-3 rounded-3xl border border-indigo-100">
+                                        <h3 className="text-[14px] uppercase text-indigo-500 font-black tracking-widest px-2 mb-2">{t('THIS_MONTH')}</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.currentMonthIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.currentMonthExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p><h2 className="text-[20px] text-amber-500">฿{accountingData.currentMonthPending.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.currentMonthNet.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="card-standard">
+                                    <div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">
+                                        <span>{t('LEDGER')} {t('CURR_MONTH')}</span>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead><tr><th className="th-custom">{t('DATE')}</th><th className="th-custom">{t('REF')}</th><th className="th-custom text-right">{t('AMOUNT')}</th></tr></thead>
+                                            <tbody className="divide-y text-[15px]">
+                                                {accountingData.currentMonthLedger.length === 0 ? (
+                                                    <tr><td colSpan="3" className="p-4 text-center text-slate-400">No transactions this month</td></tr>
+                                                ) : (
+                                                    accountingData.currentMonthLedger.map((item, idx) => renderTransaction(item, idx))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div className="card-standard">
+                                    <div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">{t('HISTORY')}</div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead><tr><th className="th-custom">{t('MONTH')}</th><th className="th-custom">{t('INCOME')}</th><th className="th-custom">{t('EXPENSE')}</th><th className="th-custom text-right">{t('NET')}</th></tr></thead>
+                                            <tbody className="divide-y text-[15px]">
+                                                {accountingData.history.map((h, i) => (
+                                                    <Fragment key={i}>
+                                                        <tr onClick={() => setExpandedHistoryMonth(expandedHistoryMonth === `${h.m}_${h.y}` ? null : `${h.m}_${h.y}`)} className={`hover:bg-indigo-50 cursor-pointer font-black uppercase transition-colors ${expandedHistoryMonth === `${h.m}_${h.y}` ? 'bg-indigo-50/50' : ''}`}>
+                                                            <td className="td-custom flex items-center gap-2">
+                                                                <Icon name={expandedHistoryMonth === `${h.m}_${h.y}` ? "ChevronDown" : "ChevronRight"} size={16} className="text-indigo-400" />
+                                                                {h.label}
+                                                            </td>
+                                                            <td className="td-custom text-emerald-600">฿{h.inc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                                            <td className="td-custom text-rose-600">฿{h.exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                                            <td className={`td-custom text-right ${h.inc-h.exp>=0?'text-emerald-700':'text-rose-700'}`}>฿{(h.inc-h.exp).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                                        </tr>
+                                                        {expandedHistoryMonth === `${h.m}_${h.y}` && (
+                                                            <tr>
+                                                                <td colSpan="4" className="p-0 border-b bg-slate-50 shadow-inner">
+                                                                    <table className="w-full text-left">
+                                                                        <tbody className="divide-y text-[14px]">
+                                                                            {h.transactions.map((item, idx) => renderTransaction(item, idx))}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </Fragment>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -739,7 +1081,7 @@
                                             <div><label className="badge-label text-[13px]">In</label><input type="date" required className="w-full input-base py-1.5 px-2 text-[16px]" value={formData.start} onChange={e=>setFormData({...formData, start:e.target.value})} /></div>
                                             <div><label className="badge-label text-[13px]">Out</label><input type="date" required className="w-full input-base py-1.5 px-2 text-[16px]" value={formData.end} onChange={e=>setFormData({...formData, end:e.target.value})} /></div>
                                         </div>
-                                        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+                                        <div className="grid grid-cols-[1.2fr_auto_1fr] gap-2 items-end">
                                             <div className="flex gap-1.5 items-end bg-indigo-50/50 p-1.5 rounded-xl border border-indigo-100 h-[64px]">
                                                 <div className="flex-1">
                                                     <label className="badge-label text-[13px] text-indigo-700">{t('RATE')}</label>
@@ -753,7 +1095,7 @@
                                             <div className="flex gap-2 items-center bg-amber-50/50 p-1.5 rounded-xl border border-amber-100 h-[64px] flex-initial">
                                                 <div>
                                                     <label className="badge-label text-[13px] text-amber-700">{t('DEPOSIT')}</label>
-                                                    <input type="number" step="0.01" className="w-32 input-base py-1 text-amber-900 text-[18px] bg-white px-2" value={formData.depositAmt === 0 ? '' : formData.depositAmt} onChange={e=>setFormData({...formData, depositAmt: e.target.value === '' ? 0 : Number(e.target.value)})} />
+                                                    <input type="number" step="0.01" className="w-24 input-base py-1 text-amber-900 text-[18px] bg-white px-2" value={formData.depositAmt === 0 ? '' : formData.depositAmt} onChange={e=>setFormData({...formData, depositAmt: e.target.value === '' ? 0 : Number(e.target.value)})} />
                                                 </div>
                                                 <div className="flex flex-col gap-1 pr-1 text-amber-700">
                                                     <label className="flex items-center gap-1.5 text-[11px] font-black cursor-pointer select-none">
@@ -789,59 +1131,76 @@
                                                     <div className="flex items-center gap-2"><Icon name="History" size={20} /><span>{t('PAYMENTS')}</span></div>
                                                     <Icon name={showLedgerInModal ? "ChevronUp" : "ChevronDown"} size={22}/>
                                                 </button>
-                                                {showLedgerInModal && <div className="mt-2 space-y-2 max-h-[350px] overflow-y-auto no-scrollbar font-black">
-                                                    {getPaymentSchedule(formData).map((mon, idx) => ( 
-                                                        <div key={idx} className="bg-white border-2 border-slate-200 rounded-xl p-2 space-y-2 font-black text-[17px]">
-                                                            <div className="flex justify-between items-center uppercase text-slate-400 border-b border-slate-100 pb-1 px-1">
-                                                                <span className="text-indigo-600 shrink-0">{mon.label}</span>
-                                                                <div className="flex-1 flex gap-2 text-[12px] overflow-hidden truncate ml-3">
-                                                                    <span>{t('RENT')}: {mon.rent.toLocaleString()}</span>
-                                                                    <span className="text-amber-600">{t('ELEC')}: {mon.electricOwed.toLocaleString()}</span>
-                                                                    <span className="text-blue-600">{t('WATER')}: {mon.waterOwed.toLocaleString()}</span>
-                                                                    <span>{t('OTHER')}: {mon.otherOwed.toLocaleString()}</span>
-                                                                </div>
-                                                                <span className={`shrink-0 ${mon.owed-mon.paid <= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>OWES: ฿{(mon.owed-mon.paid).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                                {showLedgerInModal && (() => {
+                                                    const schedule = getPaymentSchedule(formData);
+                                                    const totalOwed = schedule.reduce((sum, s) => sum + s.owed, 0);
+                                                    const totalPaid = schedule.reduce((sum, s) => sum + s.paid, 0);
+                                                    const totalRemaining = totalOwed - totalPaid;
+                                                    
+                                                    return (
+                                                        <div className="mt-2 space-y-2 max-h-[350px] overflow-y-auto no-scrollbar font-black">
+                                                            <div className="flex justify-between items-center bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-[15px] shadow-inner">
+                                                                <div className="flex flex-col"><span className="text-[11px] text-slate-500 uppercase tracking-widest">{t('TOTAL')}</span><span className="text-slate-800">฿{totalOwed.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                                <div className="flex flex-col items-center"><span className="text-[11px] text-emerald-500 uppercase tracking-widest">{t('PAID')}</span><span className="text-emerald-600">฿{totalPaid.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                                <div className="flex flex-col items-end"><span className="text-[11px] text-rose-500 uppercase tracking-widest">{t('REMAINING')}</span><span className="text-rose-600">฿{totalRemaining.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
                                                             </div>
-                                                            <div className="flex flex-row gap-1.5 px-1 pb-1 items-center">
-                                                                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200 flex-[2.5]">
-                                                                    <Icon name="Zap" size={18} className="text-amber-500 fill-amber-500" />
-                                                                    <span className="text-[11px] uppercase text-slate-400 font-black">Elec</span>
-                                                                    <input type="number" step="0.01" placeholder="Start" className="w-16 bg-white border rounded text-center text-[13px] p-0.5" value={mon.util.elecStart === 0 ? '' : mon.util.elecStart} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecStart', e.target.value)} />
-                                                                    <input type="number" step="0.01" placeholder="End" className="w-16 bg-white border rounded text-center text-[13px] p-0.5" value={mon.util.elecEnd === 0 ? '' : mon.util.elecEnd} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecEnd', e.target.value)} />
-                                                                    <input type="number" step="0.01" placeholder="Rate" className="w-10 bg-white border rounded text-center text-[13px] text-amber-600 p-0.5" value={mon.util.elecRate || 8} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecRate', e.target.value)} />
-                                                                </div>
-                                                                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200 flex-1">
-                                                                    <Icon name="Droplets" size={18} className="text-blue-500 fill-blue-500" />
-                                                                    <span className="text-[11px] uppercase text-slate-400 font-black">Water</span>
-                                                                    <input type="number" step="0.01" className="w-10 bg-white border rounded text-center text-[13px] text-blue-600 p-0.5" value={mon.util.water === 0 ? '' : mon.util.water} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'water', e.target.value)} />
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-row gap-1.5 px-1 pb-1 items-center">
-                                                                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200 flex-1">
-                                                                    <Icon name="MoreHorizontal" size={18} className="text-slate-400" />
-                                                                    <span className="text-[11px] uppercase text-slate-400 font-black">Other</span>
-                                                                    <input type="number" step="0.01" placeholder="Amt" className="w-16 bg-white border rounded text-center text-[13px] p-0.5" value={mon.util.otherAmt === 0 ? '' : mon.util.otherAmt} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'otherAmt', e.target.value)} />
-                                                                    <input type="text" placeholder="Note" className="flex-1 bg-white border rounded text-[13px] px-2 p-0.5" value={mon.util.otherNote || ''} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'otherNote', e.target.value)} />
-                                                                </div>
-                                                            </div>
-                                                            <div className="border-t border-slate-100 pt-1 px-1">
-                                                                <p className="text-[11px] text-indigo-400 uppercase tracking-widest mb-1 px-1">Payments History</p>
-                                                                {(paymentLog[`${editingId}_${mon.monthIndex}_${mon.year}`] || []).map(p => ( 
-                                                                    <div key={p.id} className="flex gap-2 items-center bg-emerald-50/40 p-1 rounded-lg mb-1">
-                                                                        <span className="text-[14px] w-28">{p.date}</span>
-                                                                        <span className="flex-1 text-emerald-700 text-right pr-1 font-black">฿{p.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-                                                                        <button type="button" onClick={() => deletePayLocal(editingId, mon.monthIndex, mon.year, p.id)} className="text-rose-400 px-1 hover:scale-110"><Icon name="Trash" size={18} /></button>
-                                                                    </div> 
-                                                                ))}
-                                                                <div className="flex items-center gap-2 pt-1 border-t border-slate-100 mt-1 pb-1">
-                                                                    <p className="text-[13px] text-slate-400 uppercase shrink-0">{t('ADD_PAYMENT')}</p>
-                                                                    <input type="number" step="0.01" id={`pay-${idx}`} className="flex-1 bg-indigo-50 border-indigo-100 rounded-lg px-2 py-1 outline-none text-[17px] text-indigo-700 font-black" defaultValue={(mon.owed - mon.paid).toFixed(2)} />
-                                                                    <button type="button" title="Fill/Add" onClick={()=>{const el=document.getElementById(`pay-${idx}`); if(el?.value){ addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value=0; } }} className="bg-slate-900 text-white p-1.5 rounded-lg active:scale-90 transition-transform"><Icon name="Check" size={20}/></button>
-                                                                </div>
-                                                            </div>
-                                                        </div> 
-                                                    ))}
-                                                </div>}
+                                                            {schedule.map((mon, idx) => ( 
+                                                                <div key={idx} className="bg-white border-2 border-slate-200 rounded-xl p-2 space-y-2 font-black text-[17px]">
+                                                                    <div className="flex justify-between items-center uppercase text-slate-400 border-b border-slate-100 pb-1 px-1">
+                                                                        <span className="text-indigo-600 shrink-0">{mon.label}</span>
+                                                                        <div className="flex-1 flex gap-2 text-[12px] overflow-hidden truncate ml-3">
+                                                                            <span>{t('RENT')}: {mon.rent.toLocaleString()}</span>
+                                                                            <span className="text-amber-600">{t('ELEC')}: {mon.electricOwed.toLocaleString()}</span>
+                                                                            <span className="text-blue-600">{t('WATER')}: {mon.waterOwed.toLocaleString()}</span>
+                                                                            <span>{t('OTHER')}: {mon.otherOwed.toLocaleString()}</span>
+                                                                        </div>
+                                                                        <span className={`shrink-0 ${mon.owed-mon.paid <= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>OWES: ฿{(mon.owed-mon.paid).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-2 px-1 pb-1 items-center">
+                                                                        <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex-[2]">
+                                                                            <Icon name="Zap" size={20} className="text-amber-500 fill-amber-500 shrink-0" />
+                                                                            <span className="text-[14px] uppercase text-slate-500 font-black shrink-0">Elec</span>
+                                                                            <input type="number" step="0.01" placeholder="Start" className="w-20 bg-white border border-slate-300 rounded-md text-center text-[16px] p-1 font-black outline-none" value={mon.util.elecStart === 0 ? '' : mon.util.elecStart} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecStart', e.target.value)} />
+                                                                            <input type="number" step="0.01" placeholder="End" className="w-20 bg-white border border-slate-300 rounded-md text-center text-[16px] p-1 font-black outline-none" value={mon.util.elecEnd === 0 ? '' : mon.util.elecEnd} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecEnd', e.target.value)} />
+                                                                            <input type="number" step="0.01" placeholder="Rate" className="w-16 bg-white border border-slate-300 rounded-md text-center text-[16px] text-amber-600 p-1 font-black outline-none" value={mon.util.elecRate || 8} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'elecRate', e.target.value)} />
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex-1 min-w-[120px]">
+                                                                            <Icon name="Droplets" size={20} className="text-blue-500 fill-blue-500 shrink-0" />
+                                                                            <span className="text-[14px] uppercase text-slate-500 font-black shrink-0">Water</span>
+                                                                            <input type="number" step="0.01" className="flex-1 w-full min-w-[50px] bg-white border border-slate-300 rounded-md text-center text-[16px] text-blue-600 p-1 font-black outline-none" value={mon.util.water === 0 ? '' : mon.util.water} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'water', e.target.value)} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-row gap-2 px-1 pb-2 items-center">
+                                                                        <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex-1">
+                                                                            <Icon name="MoreHorizontal" size={20} className="text-slate-400 shrink-0" />
+                                                                            <span className="text-[14px] uppercase text-slate-500 font-black shrink-0">Other</span>
+                                                                            <input type="number" step="0.01" placeholder="Amt" className="w-24 bg-white border border-slate-300 rounded-md text-center text-[16px] p-1 font-black outline-none" value={mon.util.otherAmt === 0 ? '' : mon.util.otherAmt} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'otherAmt', e.target.value)} />
+                                                                            <input type="text" placeholder="Note" className="flex-1 bg-white border border-slate-300 rounded-md text-[16px] px-2 p-1 font-black outline-none" value={mon.util.otherNote || ''} onChange={e=>updateUtilLocal(editingId, mon.monthIndex, mon.year, 'otherNote', e.target.value)} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="border-t border-slate-200 pt-2 px-1 mt-1">
+                                                                        <p className="text-[14px] text-indigo-500 uppercase tracking-widest mb-2 px-1 font-black">Payments History</p>
+                                                                        {(paymentLog[`${editingId}_${mon.monthIndex}_${mon.year}`] || []).map(p => ( 
+                                                                            <div key={p.id} className="flex gap-2 items-center bg-emerald-50/60 p-1.5 rounded-lg mb-1.5 border border-emerald-100">
+                                                                                <input type="date" className="w-[135px] bg-white border border-emerald-200 rounded-md text-[16px] px-2 py-1 font-condensed text-emerald-900 outline-none" value={p.date} onChange={e => updatePayLocal(editingId, mon.monthIndex, mon.year, p.id, 'date', e.target.value)} />
+                                                                                <div className="flex-1 relative flex items-center">
+                                                                                    <span className="absolute left-2 text-emerald-700 text-[16px]">฿</span>
+                                                                                    <input type="number" step="0.01" className="w-full bg-white border border-emerald-200 rounded-md text-[16px] text-emerald-700 font-black pl-6 pr-2 py-1 text-right outline-none" value={p.amount === 0 ? '' : p.amount} onChange={e => updatePayLocal(editingId, mon.monthIndex, mon.year, p.id, 'amount', e.target.value)} />
+                                                                                </div>
+                                                                                <button type="button" onClick={() => deletePayLocal(editingId, mon.monthIndex, mon.year, p.id)} className="text-rose-500 px-1 hover:scale-110"><Icon name="Trash" size={22} /></button>
+                                                                            </div> 
+                                                                        ))}
+                                                                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2 pb-1">
+                                                                            <p className="text-[15px] text-slate-500 uppercase shrink-0 font-black">{t('ADD_PAYMENT')}</p>
+                                                                            <input type="number" step="0.01" id={`pay-${idx}`} className="flex-1 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 outline-none text-[18px] text-indigo-700 font-black text-right" defaultValue={(mon.owed - mon.paid).toFixed(2)} />
+                                                                            <button type="button" title="Fill Amount" onClick={() => { document.getElementById(`pay-${idx}`).value = (mon.owed - mon.paid).toFixed(2); }} className="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg active:scale-90 transition-transform font-black text-[14px] uppercase tracking-wider">Fill</button>
+                                                                            <button type="button" title="Add Payment" onClick={()=>{const el=document.getElementById(`pay-${idx}`); if(el?.value){ addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value=0; } }} className="bg-slate-900 text-white p-2 rounded-lg active:scale-90 transition-transform"><Icon name="Check" size={22}/></button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div> 
+                                                            ))}
+                                                        </div>);
+                                                })()}
                                             </div>
                                         )}
                                         <div className="flex gap-2 pt-1">
