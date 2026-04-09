@@ -414,26 +414,32 @@
 
             const accountingData = useMemo(() => {
                 let totalIncome = 0; let totalExpense = 0;
-                let totalPending = 0; let currentMonthPending = 0;
+                let totalPendingIn = 0; let totalPendingOut = 0;
+                let currentMonthIncome = 0; let currentMonthExpense = 0;
+                let currentMonthPendingIn = 0; let currentMonthPendingOut = 0;
+                
                 const currentM = TODAY.getMonth();
                 const currentY = TODAY.getFullYear();
+                const endOfCurrentMonth = new Date(currentY, currentM + 1, 0, 23, 59, 59).getTime();
+
                 const historyMap = {};
                 const visibleBookingIds = new Set(filteredBookings.map(b => b.id));
                 const bookingLookup = {}; filteredBookings.forEach(b => bookingLookup[b.id] = b);
                 
+                // 1. Calculate Bookings Pending In
                 filteredBookings.forEach(b => {
                     const schedule = getPaymentSchedule(b);
                     schedule.forEach(s => {
                         const pending = Math.max(0, s.owed - s.paid);
                         if (pending > 0) {
-                            totalPending += pending;
-                            if (s.monthIndex === currentM && s.year === currentY) {
-                                currentMonthPending += pending;
-                            }
+                            const sDate = new Date(s.dueDate).getTime();
+                            if (sDate <= endOfCurrentMonth) totalPendingIn += pending;
+                            if (s.monthIndex === currentM && s.year === currentY) currentMonthPendingIn += pending;
                         }
                     });
                 });
 
+                // 2. Calculate Income (PaymentLog)
                 Object.entries(paymentLog).forEach(([key, pays]) => {
                     const parts = key.split('_');
                     if (parts.length === 3 && visibleBookingIds.has(parts[0])) {
@@ -444,17 +450,35 @@
                             if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y, transactions: [] };
                             const amt = Number(p.amount) || 0;
                             totalIncome += amt;
+                            
+                            const pDate = new Date(p.date);
+                            if (pDate.getMonth() === currentM && pDate.getFullYear() === currentY) currentMonthIncome += amt;
+
                             historyMap[hKey].inc += amt;
                             historyMap[hKey].transactions.push({ date: p.date, label: `${getFirstName(b.guestName)} (${b.room})`, amount: amt, type: 'IN', payload: { bid: parts[0], m, y, pid: p.id } });
                         });
                     }
                 });
 
+                // 3. Calculate Bills Pending Out & Expenses
                 filteredBills.forEach(bill => {
+                    const paid = (bill.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                    const pending = Math.max(0, (Number(bill.amount) || 0) - paid);
+                    
+                    if (pending > 0) {
+                        const bDate = new Date(bill.dueDate);
+                        if (bDate.getTime() <= endOfCurrentMonth) totalPendingOut += pending;
+                        if (bDate.getMonth() === currentM && bDate.getFullYear() === currentY) currentMonthPendingOut += pending;
+                    }
+
                     (bill.payments || []).forEach(p => {
                         const amt = Number(p.amount) || 0;
                         totalExpense += amt;
-                        const d = new Date(p.date), m = d.getMonth(), y = d.getFullYear(), hKey = `${m}_${y}`;
+
+                        const pDate = new Date(p.date);
+                        if (pDate.getMonth() === currentM && pDate.getFullYear() === currentY) currentMonthExpense += amt;
+
+                        const m = pDate.getMonth(), y = pDate.getFullYear(), hKey = `${m}_${y}`;
                         if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y, transactions: [] };
                         historyMap[hKey].exp += amt;
                         historyMap[hKey].transactions.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: amt, type: 'OUT', payload: { billId: bill.id, pid: p.id } });
@@ -465,12 +489,14 @@
                     h.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
                 });
 
-                const currentHKey = `${TODAY.getMonth()}_${TODAY.getFullYear()}`;
+                const currentHKey = `${currentM}_${currentY}`;
                 const currentMonthData = historyMap[currentHKey] || { inc: 0, exp: 0, transactions: [] };
 
                 return { 
-                    income: totalIncome, expense: totalExpense, net: totalIncome - totalExpense, pending: totalPending,
-                    currentMonthIncome: currentMonthData.inc, currentMonthExpense: currentMonthData.exp, currentMonthNet: currentMonthData.inc - currentMonthData.exp, currentMonthPending: currentMonthPending,
+                    income: totalIncome, expense: totalExpense, net: totalIncome - totalExpense,
+                    totalPendingIn, totalPendingOut,
+                    currentMonthIncome, currentMonthExpense, currentMonthNet: currentMonthIncome - currentMonthExpense, 
+                    currentMonthPendingIn, currentMonthPendingOut,
                     currentMonthLedger: currentMonthData.transactions,
                     history: Object.values(historyMap).sort((a,b) => new Date(b.y, b.m) - new Date(a.y, a.m)).reverse()
                 };
@@ -666,12 +692,12 @@
                                 {[
                                     { id: 'calendar', label: t('CALENDAR'), icon: 'LayoutGrid' },
                                     { id: 'reminders', label: t('NOTES'), icon: 'BellRing' },
-                                    { id: 'vacancy', label: t('EMPTY'), icon: 'LayoutDashboard' },
+                                    { id: 'todo', label: t('TODO'), icon: 'CheckSquare' },
                                     { id: 'bills', label: t('BILLS'), icon: 'Receipt' },
-                                    { id: 'history', label: t('GUESTS'), icon: 'Users' },
-                                    { id: 'accounting', label: t('ACCOUNTS'), icon: 'Wallet' },
+                                    { id: 'vacancy', label: t('EMPTY'), icon: 'LayoutDashboard' },
                                     { id: 'about', label: t('ABOUT'), icon: 'Info' },
-                                    { id: 'todo', label: t('TODO'), icon: 'CheckSquare' }
+                                    { id: 'accounting', label: t('ACCOUNTS'), icon: 'Wallet' },
+                                    { id: 'history', label: t('GUESTS'), icon: 'Users' }
                                 ].map(tab => (
                                     <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`nav-tab ${activeTab === tab.id ? 'nav-tab-active' : ''}`}>
                                         <Icon name={tab.icon} size={14} /> <span>{tab.label}</span>
@@ -1100,7 +1126,13 @@
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                             <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.income.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
                                             <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.expense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p><h2 className="text-[20px] text-amber-500">฿{accountingData.pending.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                                                <p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p>
+                                                <div className="flex flex-col justify-end h-full pt-1">
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('IN')}:</span> <span className="text-emerald-500">฿{accountingData.totalPendingIn.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('OUT')}:</span> <span className="text-rose-500">฿{accountingData.totalPendingOut.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                </div>
+                                            </div>
                                             <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.net.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
                                         </div>
                                     </div>
@@ -1109,7 +1141,13 @@
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                             <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.currentMonthIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
                                             <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.currentMonthExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p><h2 className="text-[20px] text-amber-500">฿{accountingData.currentMonthPending.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                                                <p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p>
+                                                <div className="flex flex-col justify-end h-full pt-1">
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('IN')}:</span> <span className="text-emerald-500">฿{accountingData.currentMonthPendingIn.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('OUT')}:</span> <span className="text-rose-500">฿{accountingData.currentMonthPendingOut.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                </div>
+                                            </div>
                                             <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.currentMonthNet.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
                                         </div>
                                     </div>
