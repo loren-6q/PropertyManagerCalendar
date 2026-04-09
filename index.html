@@ -24,7 +24,7 @@
                 font-family: "Arial Narrow", "Roboto Condensed", "Helvetica Condensed", "Segoe UI Condensed", "Liberation Sans Narrow", sans-serif;
             }
             .nav-tab {
-                @apply flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[14px] font-black uppercase transition-all text-slate-400 hover:text-slate-600;
+                @apply flex-auto flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[14px] font-black uppercase transition-all text-slate-400 hover:text-slate-600 min-w-[100px];
             }
             .nav-tab-active {
                 @apply bg-white text-indigo-700 shadow-sm border border-slate-200;
@@ -86,7 +86,9 @@
                 EDIT_STAY: "Edit Stay", SYSTEM_CONFIG: "System Config", DEPOSIT: "Deposit", COLLECTED: "Collected", REFUNDED: "Refunded", SETTINGS: "Settings", MANAGE_EXPENSES: "Manage Expenses", NEW_BILL: "New Bill", PROPERTIES: "Properties",
                 FIT_SCREEN: "Fit Screen", PROPERTY: "Property", DUE_DATE: "Due Date", AMOUNT: "Amount", DESC: "Details",
                 FUTURE: "FUTURE", IN: "IN", OUT: "OUT", FROM: "From:", GUEST: "Guest", START: "Start", END: "End", DATE: "Date", REF: "Reference", MONTH: "Month", INCOME: "Income", EXPENSE: "Expense", NET: "Net", CURR_MONTH: "(CURRENT MONTH)", DUE: "DUE",
-                PENDING: "Pending", CUMULATIVE: "Overall", THIS_MONTH: "This Month", TOTAL: "Total", REMAINING: "Remaining"
+                PENDING: "Pending", CUMULATIVE: "Overall", THIS_MONTH: "This Month", TOTAL: "Total", REMAINING: "Remaining", BILL: "Bill",
+                ABOUT: "About", TODO: "To-Do",
+                ADDRESS: "Address", WIFI_NAME: "WiFi Network", WIFI_PASS: "WiFi Password", WIFI_ACC: "WiFi Account #", LEASE_COST: "Lease Cost", ELEC_ACC: "Electric Account #", WATER_ACC: "Water Account #", WELCOME_MSG: "Welcome Message", ADD_TASK: "Add Task", ACTIVE_TASKS: "Active Tasks", COMPLETED: "Completed", NO_TASKS: "No Tasks", SAVE_CHANGES: "Save Changes", UNCOMPLETED_CHANGES: "You have unsaved changes"
             },
             th: {
                 CALENDAR: "ปฏิทิน", NOTES: "แจ้งเตือน", EMPTY: "ห้องว่าง", BILLS: "บิล", GUESTS: "ผู้พัก", ACCOUNTS: "บัญชี",
@@ -101,7 +103,9 @@
                 DEPOSIT: "เงินประกัน", COLLECTED: "เก็บแล้ว", REFUNDED: "คืนแล้ว", SETTINGS: "ตั้งค่า", MANAGE_EXPENSES: "จัดการรายจ่าย", NEW_BILL: "เพิ่มบิล", PROPERTIES: "อาคาร/โครงการ",
                 FIT_SCREEN: "จัดขนาด", PROPERTY: "โครงการ", DUE_DATE: "กำหนดชำระ", AMOUNT: "ยอดเงิน", DESC: "รายละเอียด",
                 FUTURE: "จองล่วงหน้า", IN: "เข้าพัก", OUT: "เช็คเอาท์", FROM: "ตั้งแต่:", GUEST: "ผู้พัก", START: "เริ่ม", END: "สิ้นสุด", DATE: "วันที่", REF: "รายละเอียด", MONTH: "เดือน", INCOME: "รายรับ", EXPENSE: "รายจ่าย", NET: "สุทธิ", CURR_MONTH: "(เดือนปัจจุบัน)", DUE: "ครบกำหนด",
-                PENDING: "ค้างรับ", CUMULATIVE: "ยอดสะสมทั้งหมด", THIS_MONTH: "เดือนนี้", TOTAL: "ยอดรวม", REMAINING: "คงเหลือ"
+                PENDING: "ค้างรับ", CUMULATIVE: "ยอดสะสมทั้งหมด", THIS_MONTH: "เดือนนี้", TOTAL: "ยอดรวม", REMAINING: "คงเหลือ", BILL: "บิล",
+                ABOUT: "ข้อมูล", TODO: "สิ่งที่ต้องทำ",
+                ADDRESS: "ที่อยู่", WIFI_NAME: "ชื่อ WiFi", WIFI_PASS: "รหัสผ่าน WiFi", WIFI_ACC: "หมายเลขบัญชี WiFi", LEASE_COST: "ค่าเช่าตึก", ELEC_ACC: "หมายเลขบัญชีไฟฟ้า", WATER_ACC: "หมายเลขบัญชีน้ำประปา", WELCOME_MSG: "ข้อความต้อนรับ", ADD_TASK: "เพิ่มงาน", ACTIVE_TASKS: "งานที่ต้องทำ", COMPLETED: "เสร็จสิ้น", NO_TASKS: "ไม่มีงาน", SAVE_CHANGES: "บันทึกการเปลี่ยนแปลง", UNCOMPLETED_CHANGES: "มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก"
             }
         };
 
@@ -128,6 +132,9 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfigData);
         const db = firebase.firestore();
         const auth = firebase.auth();
+
+        // --- HELPERS ---
+        const getFirstName = (name) => name ? name.split(' ')[0] : '';
 
         // --- ICON COMPONENT ---
         const Icon = ({ name, size = 16, className = "" }) => {
@@ -161,6 +168,8 @@
                 Wifi: <Fragment><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></Fragment>,
                 Sparkles: <Fragment><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></Fragment>,
                 Wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>,
+                Info: <Fragment><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></Fragment>,
+                CheckSquare: <Fragment><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></Fragment>,
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -196,6 +205,9 @@
             const [utilityLog, setUtilityLog] = useState({});
             const [bills, setBills] = useState([]);
             const [properties, setProperties] = useState(['Property A', 'Property B']);
+            const [todos, setTodos] = useState([]);
+            const [aboutData, setAboutData] = useState({ properties: {}, rooms: {} });
+            
             const [dbStatus, setDbStatus] = useState({ auth: 'Wait...', firestore: 'Wait...', error: null });
             const [hasLoaded, setHasLoaded] = useState(false);
             const [billStatusFilter, setBillStatusFilter] = useState('All');
@@ -216,6 +228,12 @@
             const [billFormData, setBillFormData] = useState({ title: '', category: 'Electric', property: 'Property A', amount: 0, dueDate: '', payments: [] });
             const [hoveredCell, setHoveredCell] = useState({ roomId: null, dateStr: null });
 
+            // ToDo & About UI State
+            const [newTodo, setNewTodo] = useState('');
+            const [showCompletedTodos, setShowCompletedTodos] = useState(false);
+            const [aboutSelection, setAboutSelection] = useState({ property: '', room: '' });
+            const [isAboutDirty, setIsAboutDirty] = useState(false);
+
             const t = (key) => TRANSLATIONS[lang][key] || key;
             const toISODate = (date) => date.toLocaleDateString('sv-SE');
             const formatBarDate = (dateStr) => { 
@@ -228,6 +246,13 @@
                 const d = new Date(dateStr); 
                 return `${d.getDate()} ${lang === 'th' ? mosTh[d.getMonth()] : mosEn[d.getMonth()]}`; 
             };
+
+            // Ensure About Tab selectors default correctly
+            useEffect(() => {
+                if (properties.length > 0 && !properties.includes(aboutSelection.property)) {
+                    setAboutSelection(s => ({ ...s, property: properties[0], room: '' }));
+                }
+            }, [properties, aboutSelection.property]);
 
             // --- HELPERS (CORE SCOPE) ---
             const handleSort = (key) => setSortConfig(p => ({ key, direction: p.key === key && p.direction === 'asc' ? 'desc' : 'asc' }));
@@ -412,7 +437,7 @@
                             const amt = Number(p.amount) || 0;
                             totalIncome += amt;
                             historyMap[hKey].inc += amt;
-                            historyMap[hKey].transactions.push({ date: p.date, label: `${b.guestName} (${b.room})`, amount: amt, type: 'IN', payload: { bid: parts[0], m, y, pid: p.id } });
+                            historyMap[hKey].transactions.push({ date: p.date, label: `${getFirstName(b.guestName)} (${b.room})`, amount: amt, type: 'IN', payload: { bid: parts[0], m, y, pid: p.id } });
                         });
                     }
                 });
@@ -478,8 +503,20 @@
                 if (!user) return;
                 const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('propertyData').doc(urlUser).onSnapshot((snap) => {
                     if (snap.exists) {
-                        const d = snap.data(); setBookings(d.bookings || []); setRooms(d.rooms || []); setPaymentLog(d.paymentLog || {}); setUtilityLog(d.utilityLog || {}); setBills(d.bills || []); setProperties(d.properties || ['Property A', 'Property B']); setDbStatus(s => ({ ...s, firestore: 'Synced' }));
-                    } else { setRooms([]); setDbStatus(s => ({ ...s, firestore: 'Sample' })); }
+                        const d = snap.data(); 
+                        setBookings(d.bookings || []); 
+                        setRooms(d.rooms || []); 
+                        setPaymentLog(d.paymentLog || {}); 
+                        setUtilityLog(d.utilityLog || {}); 
+                        setBills(d.bills || []); 
+                        setProperties(d.properties || ['Property A', 'Property B']); 
+                        setTodos(d.todos || []);
+                        setAboutData(d.aboutData || { properties: {}, rooms: {} });
+                        setDbStatus(s => ({ ...s, firestore: 'Synced' }));
+                    } else { 
+                        setRooms([]); 
+                        setDbStatus(s => ({ ...s, firestore: 'Sample' })); 
+                    }
                     setHasLoaded(true); isReadyToSync.current = true;
                 }, err => { setDbStatus(s => ({ ...s, firestore: 'ERR' })); setHasLoaded(true); });
                 return () => unsub();
@@ -503,6 +540,8 @@
                     } else {
                         await handleBillPaymentDelete(deleteTarget.payload.billId, deleteTarget.payload.pid);
                     }
+                } else if (deleteTarget.type === 'todo') {
+                    const n = todos.filter(t => t.id !== deleteTarget.id); setTodos(n); await syncData({ todos: n });
                 }
                 setDeleteTarget(null); 
             };
@@ -515,6 +554,25 @@
             const handleBillUpdateField = async (id, field, val) => { const updated = bills.map(b => b.id === id ? { ...b, [field]: field === 'amount' ? (val === '' ? 0 : Number(val)) : val } : b); setBills(updated); await syncData({ bills: updated }); };
             const handleBillPaymentUpdate = async (billId, paymentId, field, val) => { const updated = bills.map(b => b.id === billId ? { ...b, payments: (b.payments || []).map(p => p.id === paymentId ? { ...p, [field]: field === 'amount' ? (val === '' ? 0 : Number(val)) : val } : p) } : b); setBills(updated); await syncData({ bills: updated }); };
             const handleBillPaymentDelete = async (billId, paymentId) => { const updated = bills.map(b => b.id === billId ? { ...b, payments: (b.payments || []).filter(p => p.id !== paymentId) } : b); setBills(updated); await syncData({ bills: updated }); };
+
+            const handleAddTodo = async (e) => {
+                e.preventDefault();
+                if (!newTodo.trim()) return;
+                const updated = [...todos, { id: Date.now().toString(), text: newTodo.trim(), added: toISODate(new Date()), done: false }];
+                setTodos(updated); await syncData({ todos: updated }); setNewTodo('');
+            };
+            const handleToggleTodo = async (id) => {
+                const updated = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
+                setTodos(updated); await syncData({ todos: updated });
+            };
+
+            const updateAboutData = (type, id, field, value) => {
+                if (!id) return;
+                setAboutData(prev => ({ ...prev, [type]: { ...prev[type], [id]: { ...(prev[type]?.[id] || {}), [field]: value } } }));
+                setIsAboutDirty(true);
+            };
+            const activeAboutPropData = aboutData?.properties?.[aboutSelection.property] || {};
+            const activeAboutRoomData = aboutData?.rooms?.[aboutSelection.room] || {};
 
             const isTodayInViewNow = calendarDays.some(d => toISODate(d) === toISODate(TODAY));
             const todayOffsetNow = isTodayInViewNow ? Math.floor((TODAY.getTime() - calendarStart.getTime()) / 86400000) : null;
@@ -575,14 +633,14 @@
                         {/* HEADER */}
                         <div className="card-standard">
                             <div className="flex justify-between items-center p-2 border-b border-slate-100">
-                                <div className="flex items-center gap-2 pl-1 uppercase"><div className="bg-indigo-800 p-1.5 rounded-xl text-white shadow-sm"><Icon name="Building2" size={20} /></div><h1 className="text-[18px] tracking-tighter uppercase">PROPERTY MANAGER</h1></div>
+                                <div className="flex items-center gap-2 pl-1 uppercase"><div className="bg-indigo-800 p-1.5 rounded-xl text-white shadow-sm"><Icon name="Building2" size={20} /></div><h1 className="text-[18px] tracking-tighter uppercase hidden sm:block">PROPERTY MANAGER</h1></div>
                                 <div className="flex items-center gap-2">
                                     <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
                                         <button onClick={() => setLang('en')} className={`px-2 py-1 rounded-lg text-[12px] ${lang==='en'?'bg-white text-indigo-700 shadow-sm':'text-slate-400'}`}>EN</button>
                                         <button onClick={() => setLang('th')} className={`px-2 py-1 rounded-lg text-[12px] ${lang==='th'?'bg-white text-indigo-700 shadow-sm':'text-slate-400'}`}>TH</button>
                                     </div>
                                     <div className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-xl border border-slate-200">
-                                        <select className="bg-transparent text-[14px] font-black text-indigo-700 outline-none font-condensed" value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)}>
+                                        <select className="bg-transparent text-[14px] font-black text-indigo-700 outline-none font-condensed max-w-[120px] truncate" value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)}>
                                             <option value="All">{t('ALL_VIEW')}</option>
                                             {properties.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
@@ -590,14 +648,16 @@
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center p-1 bg-slate-50 gap-1 overflow-x-auto no-scrollbar">
+                            <div className="flex flex-wrap items-center p-1 bg-slate-50 gap-1">
                                 {[
                                     { id: 'calendar', label: t('CALENDAR'), icon: 'LayoutGrid' },
                                     { id: 'reminders', label: t('NOTES'), icon: 'BellRing' },
                                     { id: 'vacancy', label: t('EMPTY'), icon: 'LayoutDashboard' },
                                     { id: 'bills', label: t('BILLS'), icon: 'Receipt' },
                                     { id: 'history', label: t('GUESTS'), icon: 'Users' },
-                                    { id: 'accounting', label: t('ACCOUNTS'), icon: 'Wallet' }
+                                    { id: 'accounting', label: t('ACCOUNTS'), icon: 'Wallet' },
+                                    { id: 'about', label: t('ABOUT'), icon: 'Info' },
+                                    { id: 'todo', label: t('TODO'), icon: 'CheckSquare' }
                                 ].map(tab => (
                                     <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`nav-tab ${activeTab === tab.id ? 'nav-tab-active' : ''}`}>
                                         <Icon name={tab.icon} size={14} /> <span>{tab.label}</span>
@@ -609,12 +669,12 @@
                         {/* CALENDAR */}
                         {activeTab === 'calendar' && (
                             <div className="space-y-1 animate-in fade-in duration-300">
-                                <div className="flex items-center justify-between px-2 py-0.5">
-                                    <div className="flex items-center gap-3 bg-white/60 border border-slate-200 px-4 py-1.5 rounded-xl uppercase tracking-tighter shadow-sm text-slate-400 text-[12px]">
+                                <div className="flex flex-wrap items-center justify-between px-2 py-0.5 gap-2">
+                                    <div className="flex flex-wrap justify-center items-center gap-3 bg-white/60 border border-slate-200 px-4 py-1.5 rounded-xl uppercase tracking-tighter shadow-sm text-slate-400 text-[12px]">
                                         <div className="flex items-center gap-1"><Icon name="Clock" size={13} className="text-blue-500" /> {t('FUTURE')}</div>
                                         <div className="flex items-center gap-1"><Icon name="Home" size={13} className="text-emerald-500" /> {t('IN')}</div>
                                         <div className="flex items-center gap-1"><Icon name="CheckCircle2" size={13} className="text-slate-400" /> {t('OUT')}</div>
-                                        <div className="w-px h-3 bg-slate-300 mx-1" />
+                                        <div className="hidden sm:block w-px h-3 bg-slate-300 mx-1" />
                                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-400" /> {t('OWES')}</div>
                                         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /> {t('PAID')}</div>
                                     </div>
@@ -628,7 +688,7 @@
                                             <div className="w-px h-6 bg-slate-200 mx-1" />
                                             <button onClick={fitScreen} className="p-2 hover:bg-slate-50 text-indigo-700 flex items-center gap-1.5">
                                                 <Icon name="Maximize" size={18} />
-                                                <span className="text-[11px] uppercase">{t('FIT_SCREEN')}</span>
+                                                <span className="text-[11px] uppercase hidden sm:inline">{t('FIT_SCREEN')}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -681,7 +741,6 @@
                                                                 const offsetS = Math.max(0, Math.floor((bS.getTime() - viewS.getTime()) / 86400000));
                                                                 const offsetE = Math.min(daysInView - 1, Math.floor((bE.getTime() - viewS.getTime()) / 86400000));
                                                                 const schedule = getPaymentSchedule(booking);
-                                                                // Corrected overdue logic: sum debt due on or before today
                                                                 const overdue = schedule.filter(s => new Date(s.dueDate) <= TODAY).reduce((sum, s) => sum + (Number(s.owed)-Number(s.paid)), 0);
                                                                 const s = getStatus(booking);
                                                                 return (
@@ -691,7 +750,7 @@
                                                                                 {bS < viewS && <span className="shrink-0 text-[10px] font-black mr-1">🡄 PREV</span>}
                                                                                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 border border-white/30 ${overdue > 0 ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400'}`} />
                                                                                 <Icon name={s.icon} size={15} className="shrink-0 opacity-90" />
-                                                                                <span className="truncate">{booking.guestName} ({formatBarDate(booking.start)} - {formatBarDate(booking.end)})</span>
+                                                                                <span className="truncate">{getFirstName(booking.guestName)} ({formatBarDate(booking.start)} - {formatBarDate(booking.end)})</span>
                                                                                 <span className="shrink-0 opacity-40 mx-0.5">|</span>
                                                                                 <span className="shrink-0">฿{overdue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</span>
                                                                             </div>
@@ -720,12 +779,12 @@
                                         bookings.forEach(b => {
                                             const s = new Date(b.start), e = new Date(b.end);
                                             const status = getStatus(b).id;
-                                            if (s <= horizon && status !== 'checked-in' && status !== 'checked-out') feed.push({ date: b.start, type: t('IN'), label: `${b.guestName} (${b.room})`, icon: 'Home', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', b });
-                                            if (e <= horizon && status !== 'checked-out') feed.push({ date: b.end, type: t('OUT'), label: `${b.guestName} (${b.room})`, icon: 'CheckCircle2', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', b });
+                                            if (s <= horizon && status !== 'checked-in' && status !== 'checked-out') feed.push({ date: b.start, type: t('IN'), label: `${getFirstName(b.guestName)} (${b.room})`, icon: 'Home', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', b });
+                                            if (e <= horizon && status !== 'checked-out') feed.push({ date: b.end, type: t('OUT'), label: `${getFirstName(b.guestName)} (${b.room})`, icon: 'CheckCircle2', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', b });
                                         });
                                         bookings.forEach(b => {
                                             getPaymentSchedule(b).filter(ps => ps.owed - ps.paid > 0 && new Date(ps.dueDate) <= horizon).forEach(ps => {
-                                                feed.push({ date: ps.dueDate, type: t('RENT'), label: `${b.guestName} (${b.room}) ${t('OWES')} ฿${(ps.owed-ps.paid).toLocaleString()}`, icon: 'Wallet', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', b });
+                                                feed.push({ date: ps.dueDate, type: t('RENT'), label: `${getFirstName(b.guestName)} (${b.room}) ${t('OWES')} ฿${(ps.owed-ps.paid).toLocaleString()}`, icon: 'Wallet', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', b });
                                             });
                                         });
                                         filteredBills.filter(bill => {
@@ -748,8 +807,8 @@
                                                 <div className="grid grid-cols-1 gap-1">
                                                     {items.map((item, idx) => (
                                                         <div key={idx} onClick={() => { if(item.b) { setEditingId(item.b.id); setFormData({...item.b}); setShowModal(true); }}} className={`note-row ${item.bg} ${item.border} ${item.color} ${item.b ? 'cursor-pointer hover:scale-[1.01] transition-transform' : ''}`}>
-                                                            <Icon name={item.icon} size={16} />
-                                                            <span className="flex-1 text-[16px]">{item.type}: {item.label}</span>
+                                                            <Icon name={item.icon} size={16} className="shrink-0" />
+                                                            <span className="flex-1 text-[16px] truncate">{item.type}: {item.label}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -788,7 +847,7 @@
                                                         <span>→</span>
                                                         <span className="flex items-center gap-1.5">{gap.t ? <b className="text-slate-800">{formatBarDate(gap.t)}</b> : <span className="text-[28px] leading-none text-emerald-500">∞</span>}</span>
                                                     </div>
-                                                    <span className={`px-3 py-1 rounded-full text-[11px] uppercase ${gap.t ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>{gap.t ? t('WINDOW') : t('OPEN')}</span>
+                                                    <span className={`px-3 py-1 rounded-full text-[11px] uppercase shrink-0 ${gap.t ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>{gap.t ? t('WINDOW') : t('OPEN')}</span>
                                                 </div>
                                             ));
                                         })()}
@@ -828,7 +887,14 @@
                                     <div className="bg-slate-50 px-4 py-2 border-b flex items-center gap-2 text-indigo-700 uppercase tracking-widest"><Icon name="BellRing" size={16}/> {lang === 'th' ? 'บิลปัจจุบัน' : 'CURRENT'}</div>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left">
-                                            <thead><tr><th className="th-custom">{t('CATEGORY')}</th><th className="th-custom">{t('PROPERTY')}</th><th className="th-custom">{t('DUE_DATE')}</th><th className="th-custom">{t('AMOUNT')}</th><th className="th-custom">{t('AMT_DUE')}</th><th className="th-custom text-right"></th></tr></thead>
+                                            <thead><tr>
+                                                <th className="th-custom text-center min-[500px]:text-left">{t('CATEGORY')}</th>
+                                                <th className="th-custom">{t('PROPERTY')}</th>
+                                                <th className="th-custom">{t('DUE_DATE')}</th>
+                                                <th className="th-custom hidden min-[450px]:table-cell">{t('AMOUNT')}</th>
+                                                <th className="th-custom">{t('AMT_DUE')}</th>
+                                                <th className="th-custom text-right w-[1%] whitespace-nowrap"></th>
+                                            </tr></thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {currentBills.length === 0 ? <tr><td colSpan="6" className="text-center p-4 text-slate-400">{lang === 'th' ? 'ไม่มีบิล' : 'No bills found'}</td></tr> : currentBills.map(bill => {
                                                     const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
@@ -836,27 +902,36 @@
                                                     return (<Fragment key={bill.id}>
                                                         {isExp ? (
                                                             <tr className="bg-indigo-50 font-black uppercase shadow-inner border-y border-indigo-100">
-                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.category} onChange={e=>handleBillUpdateField(bill.id, 'category', e.target.value)}>{BILL_CATEGORIES.map(c=><option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></td>
-                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.property} onChange={e=>handleBillUpdateField(bill.id, 'property', e.target.value)}>{properties.map(p=><option key={p} value={p}>{p}</option>)}</select></td>
-                                                                <td className="td-custom px-1.5 py-1.5"><input type="date" className="input-base py-1 px-1 w-full min-w-[110px] text-[14px] bg-white font-condensed" value={bill.dueDate} onChange={e=>handleBillUpdateField(bill.id, 'dueDate', e.target.value)} /></td>
-                                                                <td className="td-custom px-1.5 py-1.5"><input type="number" step="0.01" className="input-base py-1 px-1 w-full min-w-[80px] text-[14px] bg-white font-condensed text-right" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} /></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 min-w-[50px] w-full text-[14px] bg-white font-condensed" value={bill.category} onChange={e=>handleBillUpdateField(bill.id, 'category', e.target.value)}>{BILL_CATEGORIES.map(c=><option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 min-w-[60px] w-full text-[14px] bg-white font-condensed" value={bill.property} onChange={e=>handleBillUpdateField(bill.id, 'property', e.target.value)}>{properties.map(p=><option key={p} value={p}>{p}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><input type="date" className="input-base py-1 px-1 min-w-[100px] w-full text-[14px] bg-white font-condensed" value={bill.dueDate} onChange={e=>handleBillUpdateField(bill.id, 'dueDate', e.target.value)} /></td>
+                                                                <td className="td-custom px-1.5 py-1.5 hidden min-[450px]:table-cell"><input type="number" step="0.01" className="input-base py-1 px-1 min-w-[80px] w-full text-[14px] bg-white font-condensed text-right" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} /></td>
                                                                 <td className={`td-custom px-2 py-1.5 whitespace-nowrap ${bal > 0 ? 'text-rose-600' : 'text-emerald-600 opacity-50'}`}>฿{bal.toLocaleString()}</td>
-                                                                <td className="td-custom text-right px-1.5 py-1.5"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(null)} className="bg-emerald-500 text-white hover:bg-emerald-600 p-1.5 rounded-lg shadow-sm transition-all active:scale-95" title="Done"><Icon name="Check" size={16}/></button></div></td>
+                                                                <td className="td-custom text-right px-1.5 py-1.5 w-[1%] whitespace-nowrap"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(null)} className="bg-emerald-500 text-white hover:bg-emerald-600 p-1.5 rounded-lg shadow-sm transition-all active:scale-95" title="Done"><Icon name="Check" size={16}/></button></div></td>
                                                             </tr>
                                                         ) : (
                                                             <tr className="hover:bg-slate-50 transition-colors">
-                                                                <td className="td-custom"><div className="flex items-center gap-2"><div className={`p-1.5 rounded-lg ${bal<=0?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}`}><Icon name={catInfo?.icon || 'Receipt'} size={18}/></div><span>{lang==='th' ? catInfo?.labelTh : bill.category}</span></div></td>
-                                                                <td className="td-custom opacity-70">{bill.property}</td>
+                                                                <td className="td-custom">
+                                                                    <div className="flex items-center gap-2 min-[500px]:justify-start justify-center">
+                                                                        <div className={`p-1.5 rounded-lg ${bal<=0?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}`}><Icon name={catInfo?.icon || 'Receipt'} size={18}/></div>
+                                                                        <span className="hidden min-[500px]:inline">{lang==='th' ? catInfo?.labelTh : bill.category}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="td-custom opacity-70"><div className="w-[60px] min-[500px]:w-auto truncate">{bill.property}</div></td>
                                                                 <td className="td-custom opacity-70 uppercase">{formatRemDate(bill.dueDate)}</td>
-                                                                <td className="td-custom">฿{Number(bill.amount || 0).toLocaleString()}</td>
+                                                                <td className="td-custom hidden min-[450px]:table-cell">฿{Number(bill.amount || 0).toLocaleString()}</td>
                                                                 <td className={`td-custom ${bal > 0 ? 'text-rose-600' : 'text-emerald-600 opacity-50'}`}>฿{bal.toLocaleString()}</td>
-                                                                <td className="td-custom text-right"><div className="flex justify-end gap-1">{bal > 0 && (<button onClick={() => handleQuickBillPay(bill)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Icon name="Check" size={20}/></button>)}<button onClick={() => setShowBillLedgerId(bill.id)} className="p-1.5 rounded-lg transition-colors text-indigo-600 hover:bg-indigo-50"><Icon name="Pencil" size={20}/></button><button onClick={() => duplicateBill(bill)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><Icon name="Copy" size={20}/></button><button onClick={() => setDeleteTarget({type: 'bill', id: bill.id})} className="p-1.5 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={20}/></button></div></td>
+                                                                <td className="td-custom text-right w-[1%] whitespace-nowrap"><div className="flex justify-end gap-1">{bal > 0 && (<button onClick={() => handleQuickBillPay(bill)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Icon name="Check" size={20}/></button>)}<button onClick={() => setShowBillLedgerId(bill.id)} className="p-1 rounded-lg transition-colors text-indigo-600 hover:bg-indigo-50"><Icon name="Pencil" size={20}/></button><button onClick={() => duplicateBill(bill)} className="p-1 text-slate-400 hover:bg-slate-100 rounded-lg hidden sm:inline-block"><Icon name="Copy" size={20}/></button><button onClick={() => setDeleteTarget({type: 'bill', id: bill.id})} className="p-1 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={20}/></button></div></td>
                                                             </tr>
                                                         )}
                                                         {isExp && (
                                                             <tr>
                                                                 <td colSpan="6" className="p-0 bg-white border-b">
                                                                     <div className="p-3 bg-indigo-50/30 space-y-3 animate-in slide-in-from-top-2 duration-200 shadow-inner">
+                                                                        <div className="min-[450px]:hidden flex items-center gap-2 max-w-3xl mb-2">
+                                                                            <label className="badge-label shrink-0 !mb-0 w-[80px]">{t('AMOUNT')}</label>
+                                                                            <input type="number" step="0.01" className="input-base flex-1 py-1.5 px-3 text-[15px] font-condensed bg-white" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} />
+                                                                        </div>
                                                                         <div className="flex items-center gap-2 max-w-3xl">
                                                                             <label className="badge-label shrink-0 !mb-0 w-[80px]">{t('DESC')}</label>
                                                                             <input className="input-base flex-1 py-1.5 px-3 text-[15px] font-condensed bg-white" placeholder="Details..." value={bill.title||''} onChange={e=>handleBillUpdateField(bill.id, 'title', e.target.value)} />
@@ -871,7 +946,7 @@
                                                                                             <span className="absolute left-2 text-emerald-700 text-[16px]">฿</span>
                                                                                             <input type="number" step="0.01" className="w-full bg-white border border-emerald-200 rounded-md text-[16px] text-emerald-700 font-black pl-6 pr-2 py-1 text-right outline-none" value={p.amount === 0 ? '' : p.amount} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} />
                                                                                         </div>
-                                                                                        <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-500 px-1 hover:scale-110 transition-transform"><Icon name="Trash" size={22}/></button>
+                                                                                        <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-500 px-1 hover:scale-110 transition-transform shrink-0"><Icon name="Trash" size={22}/></button>
                                                                                     </div>
                                                                                 ))}
                                                                             </div>
@@ -891,7 +966,14 @@
                                     <div className="bg-slate-50 px-4 py-2 border-b flex items-center gap-2 text-slate-500 uppercase tracking-widest"><Icon name="History" size={16}/> {t('HISTORY')}</div>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left">
-                                            <thead><tr><th className="th-custom">{t('CATEGORY')}</th><th className="th-custom">{t('PROPERTY')}</th><th className="th-custom">{t('DUE_DATE')}</th><th className="th-custom">{t('AMOUNT')}</th><th className="th-custom">{t('AMT_DUE')}</th><th className="th-custom text-right"></th></tr></thead>
+                                            <thead><tr>
+                                                <th className="th-custom text-center min-[500px]:text-left">{t('CATEGORY')}</th>
+                                                <th className="th-custom">{t('PROPERTY')}</th>
+                                                <th className="th-custom">{t('DUE_DATE')}</th>
+                                                <th className="th-custom hidden min-[450px]:table-cell">{t('AMOUNT')}</th>
+                                                <th className="th-custom">{t('AMT_DUE')}</th>
+                                                <th className="th-custom text-right w-[1%] whitespace-nowrap"></th>
+                                            </tr></thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {historyBills.length === 0 ? <tr><td colSpan="6" className="text-center p-4 text-slate-400">{lang === 'th' ? 'ไม่มีบิลประวัติ' : 'No history found'}</td></tr> : historyBills.map(bill => {
                                                     const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
@@ -899,27 +981,36 @@
                                                     return (<Fragment key={bill.id}>
                                                         {isExp ? (
                                                             <tr className="bg-slate-100 font-black uppercase shadow-inner border-y border-slate-200">
-                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.category} onChange={e=>handleBillUpdateField(bill.id, 'category', e.target.value)}>{BILL_CATEGORIES.map(c=><option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></td>
-                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 w-full min-w-[90px] text-[14px] bg-white font-condensed" value={bill.property} onChange={e=>handleBillUpdateField(bill.id, 'property', e.target.value)}>{properties.map(p=><option key={p} value={p}>{p}</option>)}</select></td>
-                                                                <td className="td-custom px-1.5 py-1.5"><input type="date" className="input-base py-1 px-1 w-full min-w-[110px] text-[14px] bg-white font-condensed" value={bill.dueDate} onChange={e=>handleBillUpdateField(bill.id, 'dueDate', e.target.value)} /></td>
-                                                                <td className="td-custom px-1.5 py-1.5"><input type="number" step="0.01" className="input-base py-1 px-1 w-full min-w-[80px] text-[14px] bg-white font-condensed text-right" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} /></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 min-w-[50px] w-full text-[14px] bg-white font-condensed" value={bill.category} onChange={e=>handleBillUpdateField(bill.id, 'category', e.target.value)}>{BILL_CATEGORIES.map(c=><option key={c.id} value={c.id}>{lang==='th'?c.labelTh:c.labelEn}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><select className="input-base py-1 px-1 min-w-[60px] w-full text-[14px] bg-white font-condensed" value={bill.property} onChange={e=>handleBillUpdateField(bill.id, 'property', e.target.value)}>{properties.map(p=><option key={p} value={p}>{p}</option>)}</select></td>
+                                                                <td className="td-custom px-1.5 py-1.5"><input type="date" className="input-base py-1 px-1 min-w-[100px] w-full text-[14px] bg-white font-condensed" value={bill.dueDate} onChange={e=>handleBillUpdateField(bill.id, 'dueDate', e.target.value)} /></td>
+                                                                <td className="td-custom px-1.5 py-1.5 hidden min-[450px]:table-cell"><input type="number" step="0.01" className="input-base py-1 px-1 min-w-[80px] w-full text-[14px] bg-white font-condensed text-right" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} /></td>
                                                                 <td className={`td-custom px-2 py-1.5 whitespace-nowrap ${bal > 0 ? 'text-rose-600' : 'text-slate-400 opacity-50'}`}>฿{bal.toLocaleString()}</td>
-                                                                <td className="td-custom text-right px-1.5 py-1.5"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(null)} className="bg-emerald-500 text-white hover:bg-emerald-600 p-1.5 rounded-lg shadow-sm transition-all active:scale-95" title="Done"><Icon name="Check" size={16}/></button></div></td>
+                                                                <td className="td-custom text-right px-1.5 py-1.5 w-[1%] whitespace-nowrap"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(null)} className="bg-emerald-500 text-white hover:bg-emerald-600 p-1.5 rounded-lg shadow-sm transition-all active:scale-95" title="Done"><Icon name="Check" size={16}/></button></div></td>
                                                             </tr>
                                                         ) : (
                                                             <tr className="hover:bg-slate-50 transition-colors">
-                                                                <td className="td-custom"><div className="flex items-center gap-2"><div className={`p-1.5 rounded-lg ${bal<=0?'bg-slate-200 text-slate-600':'bg-rose-50 text-rose-600'}`}><Icon name={catInfo?.icon || 'Receipt'} size={18}/></div><span className="text-slate-600">{lang==='th' ? catInfo?.labelTh : bill.category}</span></div></td>
-                                                                <td className="td-custom opacity-50">{bill.property}</td>
+                                                                <td className="td-custom">
+                                                                    <div className="flex items-center gap-2 min-[500px]:justify-start justify-center">
+                                                                        <div className={`p-1.5 rounded-lg ${bal<=0?'bg-slate-200 text-slate-600':'bg-rose-50 text-rose-600'}`}><Icon name={catInfo?.icon || 'Receipt'} size={18}/></div>
+                                                                        <span className="hidden min-[500px]:inline text-slate-600">{lang==='th' ? catInfo?.labelTh : bill.category}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="td-custom opacity-50"><div className="w-[60px] min-[500px]:w-auto truncate">{bill.property}</div></td>
                                                                 <td className="td-custom opacity-50 uppercase">{formatRemDate(bill.dueDate)}</td>
-                                                                <td className="td-custom text-slate-500">฿{Number(bill.amount || 0).toLocaleString()}</td>
+                                                                <td className="td-custom text-slate-500 hidden min-[450px]:table-cell">฿{Number(bill.amount || 0).toLocaleString()}</td>
                                                                 <td className={`td-custom ${bal > 0 ? 'text-rose-600' : 'text-slate-400 opacity-50'}`}>฿{bal.toLocaleString()}</td>
-                                                                <td className="td-custom text-right"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(bill.id)} className="p-1.5 rounded-lg transition-colors text-slate-400 hover:bg-slate-200"><Icon name="Pencil" size={20}/></button><button onClick={() => setDeleteTarget({type: 'bill', id: bill.id})} className="p-1.5 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={20}/></button></div></td>
+                                                                <td className="td-custom text-right w-[1%] whitespace-nowrap"><div className="flex justify-end gap-1"><button onClick={() => setShowBillLedgerId(bill.id)} className="p-1 rounded-lg transition-colors text-slate-400 hover:bg-slate-200"><Icon name="Pencil" size={20}/></button><button onClick={() => setDeleteTarget({type: 'bill', id: bill.id})} className="p-1 text-rose-400 hover:bg-rose-50 rounded-lg"><Icon name="Trash" size={20}/></button></div></td>
                                                             </tr>
                                                         )}
                                                         {isExp && (
                                                             <tr>
                                                                 <td colSpan="6" className="p-0 bg-white border-b">
                                                                     <div className="p-3 bg-slate-50 space-y-3 animate-in slide-in-from-top-2 duration-200 shadow-inner">
+                                                                        <div className="min-[450px]:hidden flex items-center gap-2 max-w-3xl mb-2">
+                                                                            <label className="badge-label shrink-0 !mb-0 w-[80px]">{t('AMOUNT')}</label>
+                                                                            <input type="number" step="0.01" className="input-base flex-1 py-1.5 px-3 text-[15px] font-condensed bg-white" value={bill.amount === 0 ? '' : bill.amount} onChange={e=>handleBillUpdateField(bill.id, 'amount', e.target.value)} />
+                                                                        </div>
                                                                         <div className="flex items-center gap-2 max-w-3xl">
                                                                             <label className="badge-label shrink-0 !mb-0 w-[80px]">{t('DESC')}</label>
                                                                             <input className="input-base flex-1 py-1.5 px-3 text-[15px] font-condensed bg-white" placeholder="Details..." value={bill.title||''} onChange={e=>handleBillUpdateField(bill.id, 'title', e.target.value)} />
@@ -934,7 +1025,7 @@
                                                                                             <span className="absolute left-2 text-emerald-700 text-[16px]">฿</span>
                                                                                             <input type="number" step="0.01" className="w-full bg-white border border-emerald-200 rounded-md text-[16px] text-emerald-700 font-black pl-6 pr-2 py-1 text-right outline-none" value={p.amount === 0 ? '' : p.amount} onChange={e => handleBillPaymentUpdate(bill.id, p.id, 'amount', e.target.value)} />
                                                                                         </div>
-                                                                                        <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-500 px-1 hover:scale-110 transition-transform"><Icon name="Trash" size={22}/></button>
+                                                                                        <button onClick={() => handleBillPaymentDelete(bill.id, p.id)} className="text-rose-500 px-1 hover:scale-110 transition-transform shrink-0"><Icon name="Trash" size={22}/></button>
                                                                                     </div>
                                                                                 ))}
                                                                             </div>
@@ -973,7 +1064,7 @@
                                             <tbody className="divide-y text-[15px]">
                                                 {allGuestsSorted.map(b => (
                                                     <tr key={b.id} onClick={() => { setEditingId(b.id); setFormData({...b}); setShowModal(true); }} className="hover:bg-slate-50 font-black cursor-pointer uppercase">
-                                                        <td className="td-custom truncate">{b.guestName}</td>
+                                                        <td className="td-custom truncate">{getFirstName(b.guestName)}</td>
                                                         <td className="td-custom opacity-70 truncate">{b.property || 'N/A'}</td>
                                                         <td className="td-custom text-indigo-600 truncate">{b.room}</td>
                                                         <td className="td-custom opacity-70 truncate">{b.start}</td>
@@ -1063,6 +1154,98 @@
                             </div>
                         )}
 
+                        {/* ABOUT TAB */}
+                        {activeTab === 'about' && (
+                            <div className="p-2 space-y-4 animate-in fade-in duration-300 font-black max-w-4xl mx-auto">
+                                <div className="card-standard p-4">
+                                    <div className="flex items-center gap-2 mb-4 text-indigo-700 uppercase border-b border-slate-100 pb-2">
+                                        <Icon name="Building2" size={20} /> <h2 className="text-[18px]">{t('PROPERTY')} {t('ABOUT')}</h2>
+                                    </div>
+                                    <select className="input-base w-full text-[16px] text-indigo-800 mb-4" value={aboutSelection.property} onChange={e => setAboutSelection(s => ({...s, property: e.target.value}))}>
+                                        {properties.map(p => <option key={p} value={p}>{p}</option>)}
+                                    </select>
+                                    {aboutSelection.property && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div className="col-span-1 md:col-span-2"><label className="badge-label">{t('ADDRESS')}</label><input className="input-base w-full py-1.5" value={activeAboutPropData.address || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'address', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('WIFI_NAME')}</label><input className="input-base w-full py-1.5" value={activeAboutPropData.wifiName || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'wifiName', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('WIFI_PASS')}</label><input className="input-base w-full py-1.5" value={activeAboutPropData.wifiPass || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'wifiPass', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('WIFI_ACC')}</label><input className="input-base w-full py-1.5" value={activeAboutPropData.wifiAcc || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'wifiAcc', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('LEASE_COST')}</label><input type="number" className="input-base w-full py-1.5" value={activeAboutPropData.leaseCost || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'leaseCost', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('ELEC_ACC')}</label><input className="input-base w-full py-1.5" value={activeAboutPropData.elecAcc || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'elecAcc', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('WATER_ACC')}</label><input className="input-base w-full py-1.5" value={activeAboutPropData.waterAcc || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'waterAcc', e.target.value)} /></div>
+                                            <div className="col-span-1 md:col-span-2"><label className="badge-label">{t('DESC')}</label><textarea className="input-base w-full py-1.5 h-16" value={activeAboutPropData.description || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'description', e.target.value)} /></div>
+                                            <div className="col-span-1 md:col-span-2"><label className="badge-label">{t('GUEST_NOTES')}</label><textarea className="input-base w-full py-1.5 h-16" value={activeAboutPropData.notes || ''} onChange={e => updateAboutData('properties', aboutSelection.property, 'notes', e.target.value)} /></div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="card-standard p-4 mt-4">
+                                    <div className="flex items-center gap-2 mb-4 text-emerald-700 uppercase border-b border-slate-100 pb-2">
+                                        <Icon name="Home" size={20} /> <h2 className="text-[18px]">{t('UNIT')} {t('ABOUT')}</h2>
+                                    </div>
+                                    <select className="input-base w-full text-[16px] text-emerald-800 mb-4" value={aboutSelection.room} onChange={e => setAboutSelection(s => ({...s, room: e.target.value}))}>
+                                        <option value="" disabled>-- Select Unit --</option>
+                                        {rooms.filter(r => r.property === aboutSelection.property).map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                                    </select>
+                                    {aboutSelection.room && (
+                                        <div className="space-y-3">
+                                            <div><label className="badge-label">{t('DESC')}</label><input className="input-base w-full py-1.5" value={activeAboutRoomData.description || ''} onChange={e => updateAboutData('rooms', aboutSelection.room, 'description', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('WELCOME_MSG')}</label><textarea className="input-base w-full py-1.5 h-20" value={activeAboutRoomData.welcomeMsg || ''} onChange={e => updateAboutData('rooms', aboutSelection.room, 'welcomeMsg', e.target.value)} /></div>
+                                            <div><label className="badge-label">{t('GUEST_NOTES')}</label><textarea className="input-base w-full py-1.5 h-16" value={activeAboutRoomData.notes || ''} onChange={e => updateAboutData('rooms', aboutSelection.room, 'notes', e.target.value)} /></div>
+                                        </div>
+                                    )}
+                                </div>
+                                {isAboutDirty && (
+                                    <div className="fixed bottom-12 inset-x-0 p-4 z-50 flex justify-center animate-in slide-in-from-bottom-5">
+                                        <div className="bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-4">
+                                            <span className="text-[15px]">{t('UNCOMPLETED_CHANGES')}</span>
+                                            <button onClick={async () => { await syncData({ aboutData }); setIsAboutDirty(false); }} className="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-xl transition-all active:scale-95">{t('SAVE_CHANGES')}</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TODO TAB */}
+                        {activeTab === 'todo' && (
+                            <div className="p-2 space-y-4 animate-in fade-in duration-300 font-black max-w-4xl mx-auto">
+                                <div className="card-standard p-4">
+                                    <form onSubmit={handleAddTodo} className="flex gap-2 mb-6">
+                                        <input type="text" className="input-base flex-1 text-[16px]" placeholder={t('ADD_TASK')} value={newTodo} onChange={e => setNewTodo(e.target.value)} />
+                                        <button type="submit" disabled={!newTodo.trim()} className="bg-indigo-600 disabled:opacity-50 text-white px-5 rounded-xl shadow-md active:scale-95 transition-all"><Icon name="PlusCircle" size={24} /></button>
+                                    </form>
+                                    <h3 className="text-[14px] uppercase text-slate-500 tracking-widest mb-3 border-b border-slate-100 pb-1 px-1">{t('ACTIVE_TASKS')}</h3>
+                                    <div className="space-y-2">
+                                        {todos.filter(t => !t.done).length === 0 ? <p className="text-center text-slate-400 py-4 opacity-50">{t('NO_TASKS')}</p> : 
+                                         todos.filter(t => !t.done).map(task => (
+                                            <div key={task.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors">
+                                                <button onClick={() => handleToggleTodo(task.id)} className="w-6 h-6 shrink-0 rounded border-2 border-slate-300 flex items-center justify-center text-transparent hover:border-indigo-500 transition-colors"><Icon name="Check" size={16} /></button>
+                                                <div className="flex-1 min-w-0"><p className="text-[16px] text-slate-800 truncate">{task.text}</p><p className="text-[11px] text-slate-400 uppercase tracking-widest">{formatRemDate(task.added)}</p></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                {todos.some(t => t.done) && (
+                                    <div className="card-standard">
+                                        <button onClick={() => setShowCompletedTodos(!showCompletedTodos)} className="w-full bg-slate-100 px-4 py-3 flex items-center justify-between text-slate-500 uppercase tracking-widest">
+                                            <div className="flex items-center gap-2"><Icon name="CheckSquare" size={18} /> {t('COMPLETED')}</div>
+                                            <Icon name={showCompletedTodos ? 'ChevronUp' : 'ChevronDown'} size={20} />
+                                        </button>
+                                        {showCompletedTodos && (
+                                            <div className="p-4 space-y-2 bg-slate-50/50">
+                                                {todos.filter(t => t.done).map(task => (
+                                                    <div key={task.id} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl opacity-60 hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => handleToggleTodo(task.id)} className="w-6 h-6 shrink-0 rounded bg-emerald-500 border-2 border-emerald-500 flex items-center justify-center text-white"><Icon name="Check" size={16} /></button>
+                                                        <div className="flex-1 min-w-0"><p className="text-[16px] text-slate-500 line-through truncate">{task.text}</p></div>
+                                                        <button onClick={() => setDeleteTarget({ type: 'todo', id: task.id })} className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg shrink-0"><Icon name="Trash" size={18} /></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* GUEST MODAL */}
                         {showModal && (
                             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 font-black font-condensed">
@@ -1070,10 +1253,10 @@
                                     <div className="p-2 border-b border-slate-200 flex items-center bg-slate-50 gap-2">
                                         <input type="text" required placeholder={t('GUEST_NAME')} className="flex-1 bg-transparent text-[22px] font-black uppercase text-indigo-800 border-none focus:ring-0 outline-none placeholder:text-indigo-200" value={formData.guestName} onChange={e=>setFormData({...formData, guestName:e.target.value})} />
                                         <div className="flex items-center gap-1.5 bg-indigo-100/50 px-2 py-1 rounded-xl border border-indigo-200 ml-auto">
-                                            <Icon name="Home" size={16} className="text-indigo-700" />
-                                            <select className="bg-transparent text-[18px] font-black text-indigo-800 outline-none font-condensed cursor-pointer" value={formData.room} onChange={e => { const r = rooms.find(x => x.name === e.target.value); setFormData({...formData, room: e.target.value, property: r?.property || properties[0]}); }}>{rooms.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select>
+                                            <Icon name="Home" size={16} className="text-indigo-700 shrink-0" />
+                                            <select className="bg-transparent text-[18px] font-black text-indigo-800 outline-none font-condensed cursor-pointer max-w-[120px] truncate" value={formData.room} onChange={e => { const r = rooms.find(x => x.name === e.target.value); setFormData({...formData, room: e.target.value, property: r?.property || properties[0]}); }}>{rooms.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select>
                                         </div>
-                                        <button onClick={() => setShowModal(false)} className="p-1 text-slate-400 hover:text-rose-500 ml-1"><Icon name="X" size={24}/></button>
+                                        <button onClick={() => setShowModal(false)} className="p-1 text-slate-400 hover:text-rose-500 ml-1 shrink-0"><Icon name="X" size={24}/></button>
                                     </div>
                                     <form onSubmit={handleSaveBooking} className="p-3 space-y-2">
                                         <div className="grid grid-cols-[1.9fr_0.55fr_0.55fr] gap-2">
@@ -1190,11 +1373,14 @@
                                                                                 <button type="button" onClick={() => deletePayLocal(editingId, mon.monthIndex, mon.year, p.id)} className="text-rose-500 px-1 hover:scale-110"><Icon name="Trash" size={22} /></button>
                                                                             </div> 
                                                                         ))}
-                                                                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2 pb-1">
+                                                                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 mt-2 pb-1">
                                                                             <p className="text-[15px] text-slate-500 uppercase shrink-0 font-black">{t('ADD_PAYMENT')}</p>
-                                                                            <input type="number" step="0.01" id={`pay-${idx}`} className="flex-1 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 outline-none text-[18px] text-indigo-700 font-black text-right" defaultValue={(mon.owed - mon.paid).toFixed(2)} />
-                                                                            <button type="button" title="Fill Amount" onClick={() => { document.getElementById(`pay-${idx}`).value = (mon.owed - mon.paid).toFixed(2); }} className="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg active:scale-90 transition-transform font-black text-[14px] uppercase tracking-wider">Fill</button>
-                                                                            <button type="button" title="Add Payment" onClick={()=>{const el=document.getElementById(`pay-${idx}`); if(el?.value){ addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value=0; } }} className="bg-slate-900 text-white p-2 rounded-lg active:scale-90 transition-transform"><Icon name="Check" size={22}/></button>
+                                                                            <div className="flex-1 min-w-[80px] relative">
+                                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-indigo-400">฿</span>
+                                                                                <input type="number" step="0.01" id={`pay-${idx}`} className="w-full bg-indigo-50 border border-indigo-100 rounded-lg pl-6 pr-2 py-1.5 outline-none text-[16px] text-indigo-700 font-black text-right shrink-0" defaultValue={(mon.owed - mon.paid).toFixed(2)} />
+                                                                            </div>
+                                                                            <button type="button" title="Fill Amount" onClick={() => { document.getElementById(`pay-${idx}`).value = (mon.owed - mon.paid).toFixed(2); }} className="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg active:scale-90 transition-transform font-black text-[14px] uppercase tracking-wider shrink-0">Fill</button>
+                                                                            <button type="button" title="Add Payment" onClick={()=>{const el=document.getElementById(`pay-${idx}`); if(el?.value){ addPayLocal(editingId, mon.monthIndex, mon.year, el.value); el.value=0; } }} className="bg-slate-900 text-white p-1.5 rounded-lg active:scale-90 transition-transform shrink-0 ml-auto"><Icon name="Check" size={20}/></button>
                                                                         </div>
                                                                     </div>
                                                                 </div> 
