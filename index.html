@@ -6,6 +6,14 @@
     <title>PROPERTY MANAGER - Management Suite</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>">
     
+    <script type="importmap">
+    {
+      "imports": {
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime"
+      }
+    }
+    </script>
+
     <!-- 1. React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -54,7 +62,7 @@
 <body class="bg-slate-100 antialiased overflow-x-hidden font-condensed text-slate-900 text-[14px]">
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-type="module">
         const { useState, useMemo, useEffect, useLayoutEffect, useRef, Fragment } = React;
 
         // --- GLOBAL CONSTANTS ---
@@ -1098,129 +1106,6 @@
                                                         )}
                                                     </Fragment>);
                                                 })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'history' && (
-                            <div className="max-w-[1800px] mx-auto p-2 animate-in fade-in duration-300 font-black">
-                                <div className="bg-white p-2 px-4 rounded-2xl border border-slate-300 shadow-sm flex flex-wrap items-center justify-between gap-3 mb-2 font-black">
-                                    <h2 className="text-[18px] uppercase text-indigo-700 flex items-center gap-2"><Icon name="Users" size={18}/> {t('GUESTS')}</h2>
-                                    <div className="relative flex-1 max-w-xs"><Icon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/><input className="w-full bg-slate-100 border-none rounded-xl pl-10 pr-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 font-black font-condensed text-[18px]" placeholder={t('SEARCH')} value={historySearch} onChange={e=>setHistorySearch(e.target.value)} /></div>
-                                </div>
-                                <div className="card-standard">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left table-fixed">
-                                            <thead>
-                                                <tr>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[25%]" onClick={() => handleSort('guestName')}>{t('GUEST')} {getSortIcon('guestName')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[20%]" onClick={() => handleSort('property')}>{t('PROPERTY')} {getSortIcon('property')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('room')}>{t('UNIT')} {getSortIcon('room')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('start')}>{t('START')} {getSortIcon('start')}</th>
-                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('end')}>{t('END')} {getSortIcon('end')}</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y text-[15px]">
-                                                {allGuestsSorted.map(b => (
-                                                    <tr key={b.id} onClick={() => { setEditingId(b.id); setFormData({...b}); setShowModal(true); }} className="hover:bg-slate-50 font-black cursor-pointer uppercase">
-                                                        <td className="td-custom truncate">{getFirstName(b.guestName)}</td>
-                                                        <td className="td-custom opacity-70 truncate">{b.property || 'N/A'}</td>
-                                                        <td className="td-custom text-indigo-600 truncate">{b.room}</td>
-                                                        <td className="td-custom opacity-70 truncate">{b.start}</td>
-                                                        <td className="td-custom opacity-70 truncate">{b.end}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'accounting' && (
-                            <div className="p-2 max-w-[1800px] mx-auto space-y-4 animate-in fade-in duration-500 font-black">
-                                <div className="space-y-3">
-                                    <div className="bg-slate-200/50 p-3 rounded-3xl border border-slate-200">
-                                        <h3 className="text-[14px] uppercase text-slate-500 font-black tracking-widest px-2 mb-2">{t('CUMULATIVE')}</h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.income.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.expense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                                                <p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p>
-                                                <div className="flex flex-col justify-end h-full pt-1">
-                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('IN')}:</span> <span className="text-emerald-500">฿{accountingData.totalPendingIn.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
-                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('OUT')}:</span> <span className="text-rose-500">฿{accountingData.totalPendingOut.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
-                                                </div>
-                                            </div>
-                                            <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.net.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-indigo-50/70 p-3 rounded-3xl border border-indigo-100">
-                                        <h3 className="text-[14px] uppercase text-indigo-500 font-black tracking-widest px-2 mb-2">{t('THIS_MONTH')}</h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.currentMonthIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.currentMonthExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                                                <p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p>
-                                                <div className="flex flex-col justify-end h-full pt-1">
-                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('IN')}:</span> <span className="text-emerald-500">฿{accountingData.currentMonthPendingIn.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
-                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('OUT')}:</span> <span className="text-rose-500">฿{accountingData.currentMonthPendingOut.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
-                                                </div>
-                                            </div>
-                                            <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.currentMonthNet.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="card-standard">
-                                    <div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">
-                                        <span>{t('LEDGER')} {t('CURR_MONTH')}</span>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
-                                            <thead><tr><th className="th-custom">{t('DATE')}</th><th className="th-custom">{t('REF')}</th><th className="th-custom text-right">{t('AMOUNT')}</th></tr></thead>
-                                            <tbody className="divide-y text-[15px]">
-                                                {accountingData.currentMonthLedger.length === 0 ? (
-                                                    <tr><td colSpan="3" className="p-4 text-center text-slate-400">No transactions this month</td></tr>
-                                                ) : (
-                                                    accountingData.currentMonthLedger.map((item, idx) => renderTransaction(item, idx))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div className="card-standard">
-                                    <div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">{t('HISTORY')}</div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
-                                            <thead><tr><th className="th-custom">{t('MONTH')}</th><th className="th-custom">{t('INCOME')}</th><th className="th-custom">{t('EXPENSE')}</th><th className="th-custom text-right">{t('NET')}</th></tr></thead>
-                                            <tbody className="divide-y text-[15px]">
-                                                {accountingData.history.map((h, i) => (
-                                                    <Fragment key={i}>
-                                                        <tr onClick={() => setExpandedHistoryMonth(expandedHistoryMonth === `${h.m}_${h.y}` ? null : `${h.m}_${h.y}`)} className={`hover:bg-indigo-50 cursor-pointer font-black uppercase transition-colors ${expandedHistoryMonth === `${h.m}_${h.y}` ? 'bg-indigo-50/50' : ''}`}>
-                                                            <td className="td-custom flex items-center gap-2">
-                                                                <Icon name={expandedHistoryMonth === `${h.m}_${h.y}` ? "ChevronDown" : "ChevronRight"} size={16} className="text-indigo-400" />
-                                                                {h.label}
-                                                            </td>
-                                                            <td className="td-custom text-emerald-600">฿{h.inc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                                                            <td className="td-custom text-rose-600">฿{h.exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                                                            <td className={`td-custom text-right ${h.inc-h.exp>=0?'text-emerald-700':'text-rose-700'}`}>฿{(h.inc-h.exp).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                                                        </tr>
-                                                        {expandedHistoryMonth === `${h.m}_${h.y}` && (
-                                                            <tr>
-                                                                <td colSpan="4" className="p-0 border-b bg-slate-50 shadow-inner">
-                                                                    <table className="w-full text-left">
-                                                                        <tbody className="divide-y text-[14px]">
-                                                                            {h.transactions.map((item, idx) => renderTransaction(item, idx))}
-                                                                        </tbody>
-                                                                    </table>
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </Fragment>
-                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
