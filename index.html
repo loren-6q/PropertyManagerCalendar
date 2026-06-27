@@ -143,8 +143,16 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // --- HELPERS ---
-        const getFirstName = (name) => name ? name.split(' ')[0] : '';
+        // --- ROBUST HELPERS ---
+        const getFirstName = (name) => {
+            if (!name) return '';
+            return String(name).split(' ')[0];
+        };
+
+        const toISODate = (date) => {
+            if (!(date instanceof Date) || isNaN(date.getTime())) return '';
+            return date.toLocaleDateString('sv-SE');
+        };
 
         // --- ICON COMPONENT ---
         const Icon = ({ name, size = 16, className = "" }) => {
@@ -251,15 +259,17 @@
             const [isAboutDirty, setIsAboutDirty] = useState(false);
 
             const t = (key) => TRANSLATIONS[lang][key] || key;
-            const toISODate = (date) => date.toLocaleDateString('sv-SE');
+
             const formatBarDate = (dateStr) => { 
                 if (!dateStr) return ''; 
                 const d = new Date(dateStr); 
+                if (isNaN(d.getTime())) return '';
                 return `${d.getDate()}${mosEn[d.getMonth()]}`; 
             };
             const formatRemDate = (dateStr) => { 
                 if (!dateStr) return '...'; 
                 const d = new Date(dateStr); 
+                if (isNaN(d.getTime())) return '...';
                 return `${d.getDate()} ${lang === 'th' ? mosTh[d.getMonth()] : mosEn[d.getMonth()]}`; 
             };
 
@@ -336,6 +346,8 @@
             const getPaymentSchedule = (booking) => {
                 if (!booking || !booking.start || !booking.end) return [];
                 const start = new Date(booking.start), end = new Date(booking.end);
+                if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+                
                 const schedule = [];
                 let current = new Date(start.getFullYear(), start.getMonth(), 1);
                 let isFirst = true;
@@ -354,7 +366,9 @@
                         const otherOwed = Number(Number(util.otherAmt || 0).toFixed(2));
                         const owed = Number((rent + electricOwed + waterOwed + otherOwed).toFixed(2));
                         const paid = (paymentLog[key] || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
-                        schedule.push({ monthIndex: cM, year: cY, label: mosEn[cM], rent, electricOwed, waterOwed, otherOwed, otherNote: util.otherNote, owed, paid, util, dueDate: toISODate(new Date(cY, cM, isFirst ? start.getDate() : 1)) });
+                        
+                        const dueD = new Date(cY, cM, isFirst ? start.getDate() : 1);
+                        schedule.push({ monthIndex: cM, year: cY, label: mosEn[cM], rent, electricOwed, waterOwed, otherOwed, otherNote: util.otherNote, owed, paid, util, dueDate: toISODate(dueD) });
                         isFirst = false;
                     }
                     current = new Date(cY, cM + 1, 1);
@@ -395,6 +409,7 @@
                     allFiltered.push(bill);
 
                     const bDate = new Date(bill.dueDate).getTime();
+                    if (isNaN(bDate)) return;
                     
                     // CURRENT includes: Overdue bills OR any bill within +/- 30 days of today
                     const isOverdue = (bal > 0 && bDate < todayMs);
@@ -415,8 +430,8 @@
                     }
                 });
 
-                curr.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
-                hist.sort((a,b) => new Date(b.dueDate) - new Date(a.dueDate)); 
+                curr.sort((a,b) => (new Date(a.dueDate).getTime() || 0) - (new Date(b.dueDate).getTime() || 0));
+                hist.sort((a,b) => (new Date(b.dueDate).getTime() || 0) - (new Date(a.dueDate).getTime() || 0)); 
                 return { currentBills: curr, historyBills: hist, filteredBills: allFiltered };
             }, [bills, selectedProperty, selectedBillCategory, billStatusFilter, showFutureBills]);
 
@@ -441,7 +456,7 @@
                         const pending = Math.max(0, s.owed - s.paid);
                         if (pending > 0) {
                             const sDate = new Date(s.dueDate).getTime();
-                            if (sDate <= endOfCurrentMonth) {
+                            if (!isNaN(sDate) && sDate <= endOfCurrentMonth) {
                                 totalPendingIn += pending;
                             }
                             if (s.monthIndex === currentM && s.year === currentY) {
@@ -464,7 +479,7 @@
                             totalIncome += amt;
                             
                             const pDate = new Date(p.date);
-                            if (pDate.getMonth() === currentM && pDate.getFullYear() === currentY) currentMonthIncome += amt;
+                            if (!isNaN(pDate.getTime()) && pDate.getMonth() === currentM && pDate.getFullYear() === currentY) currentMonthIncome += amt;
 
                             historyMap[hKey].inc += amt;
                             historyMap[hKey].transactions.push({ date: p.date, label: `${getFirstName(b.guestName)} (${b.room})`, amount: amt, type: 'IN', payload: { bid: parts[0], m, y, pid: p.id } });
@@ -479,10 +494,10 @@
                     
                     if (pending > 0) {
                         const bDate = new Date(bill.dueDate);
-                        if (bDate.getTime() <= endOfCurrentMonth) {
+                        if (!isNaN(bDate.getTime()) && bDate.getTime() <= endOfCurrentMonth) {
                             totalPendingOut += pending;
                         }
-                        if (bDate.getMonth() === currentM && bDate.getFullYear() === currentY) {
+                        if (!isNaN(bDate.getTime()) && bDate.getMonth() === currentM && bDate.getFullYear() === currentY) {
                             currentMonthPendingOut += pending;
                         }
                     }
@@ -492,17 +507,19 @@
                         totalExpense += amt;
 
                         const pDate = new Date(p.date);
-                        if (pDate.getMonth() === currentM && pDate.getFullYear() === currentY) currentMonthExpense += amt;
+                        if (!isNaN(pDate.getTime()) && pDate.getMonth() === currentM && pDate.getFullYear() === currentY) currentMonthExpense += amt;
 
                         const m = pDate.getMonth(), y = pDate.getFullYear(), hKey = `${m}_${y}`;
-                        if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y, transactions: [] };
-                        historyMap[hKey].exp += amt;
-                        historyMap[hKey].transactions.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: amt, type: 'OUT', payload: { billId: bill.id, pid: p.id } });
+                        if (!isNaN(m) && !isNaN(y)) {
+                            if (!historyMap[hKey]) historyMap[hKey] = { inc: 0, exp: 0, label: `${mosEn[m]} ${y}`, m, y, transactions: [] };
+                            historyMap[hKey].exp += amt;
+                            historyMap[hKey].transactions.push({ date: p.date, label: `${bill.category} (${bill.property})`, amount: amt, type: 'OUT', payload: { billId: bill.id, pid: p.id } });
+                        }
                     });
                 });
 
                 Object.values(historyMap).forEach(h => {
-                    h.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+                    h.transactions.sort((a,b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
                 });
 
                 const currentHKey = `${currentM}_${currentY}`;
@@ -514,7 +531,7 @@
                     currentMonthIncome, currentMonthExpense, currentMonthNet: currentMonthIncome - currentMonthExpense, 
                     currentMonthPendingIn, currentMonthPendingOut,
                     currentMonthLedger: currentMonthData.transactions,
-                    history: Object.values(historyMap).sort((a,b) => new Date(b.y, b.m) - new Date(a.y, a.m)).reverse()
+                    history: Object.values(historyMap).sort((a,b) => (new Date(b.y, b.m).getTime() || 0) - (new Date(a.y, a.m).getTime() || 0)).reverse()
                 };
             }, [filteredBookings, filteredBills, paymentLog, utilityLog]);
 
@@ -526,7 +543,7 @@
                     let valA = a[key], valB = b[key];
                     if (key === 'start' || key === 'end') { 
                         valA = valA ? new Date(valA).getTime() : 0; valB = valB ? new Date(valB).getTime() : 0; 
-                        return direction === 'asc' ? valA - valB : valB - valA;
+                        return direction === 'asc' ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
                     }
                     valA = (valA ?? "").toString().toLowerCase(); valB = (valB ?? "").toString().toLowerCase();
                     if (valA < valB) return direction === 'asc' ? -1 : 1;
@@ -803,11 +820,12 @@
                                                             {filteredBookings.filter(b => b.room === r.name).map(booking => {
                                                                 const bS = new Date(booking.start); bS.setHours(0,0,0,0);
                                                                 const bE = new Date(booking.end); bE.setHours(0,0,0,0);
+                                                                if (isNaN(bS.getTime()) || isNaN(bE.getTime())) return null; // Safe guard
                                                                 const viewS = new Date(calendarStart);
                                                                 const viewE = new Date(calendarDays[calendarDays.length-1]);
                                                                 if (bE <= viewS || bS > viewE) return null;
-                                                                const offsetS = Math.max(0, Math.floor((bS.getTime() - viewS.getTime()) / 86400000));
-                                                                const offsetE = Math.min(daysInView - 1, Math.floor((bE.getTime() - viewS.getTime()) / 86400000));
+                                                                const offsetS = Math.max(0, Math.floor((bS.getTime() - viewS.getTime()) / 86400000)) || 0;
+                                                                const offsetE = Math.min(daysInView - 1, Math.floor((bE.getTime() - viewS.getTime()) / 86400000)) || 0;
                                                                 const schedule = getPaymentSchedule(booking);
                                                                 const endOfCurrentMonth = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 0, 23, 59, 59);
                                                                 const displayBalance = schedule.filter(s => new Date(s.dueDate) <= endOfCurrentMonth).reduce((sum, s) => sum + Math.max(0, Number(s.owed)-Number(s.paid)), 0);
@@ -866,7 +884,7 @@
                                             const balance = (Number(bill.amount) || 0) - paid;
                                             feed.push({ date: bill.dueDate, type: t('BILL'), label: `${bill.category} (${bill.property}) ${t('DUE')} ฿${balance.toLocaleString()}`, icon: 'Receipt', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' });
                                         });
-                                        const grouped = feed.sort((a,b) => new Date(a.date) - new Date(b.date)).reduce((acc, item) => {
+                                        const grouped = feed.sort((a,b) => (new Date(a.date).getTime()||0) - (new Date(b.date).getTime()||0)).reduce((acc, item) => {
                                             if (!acc[item.date]) acc[item.date] = [];
                                             acc[item.date].push(item);
                                             return acc;
@@ -967,7 +985,7 @@
                                             </tr></thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {currentBills.length === 0 ? <tr><td colSpan="6" className="text-center p-4 text-slate-400">{lang === 'th' ? 'ไม่มีบิล' : 'No bills found'}</td></tr> : currentBills.map(bill => {
-                                                    const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
+                                                    const paid = (bill.payments || []).reduce((s,p)=>s+(Number(p.amount)||0), 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
                                                     const catInfo = BILL_CATEGORIES.find(c => c.id === bill.category);
                                                     return (<Fragment key={bill.id}>
                                                         {isExp ? (
@@ -1046,7 +1064,7 @@
                                             </tr></thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {historyBills.length === 0 ? <tr><td colSpan="6" className="text-center p-4 text-slate-400">{lang === 'th' ? 'ไม่มีบิลประวัติ' : 'No history found'}</td></tr> : historyBills.map(bill => {
-                                                    const paid = (bill.payments || []).reduce((s,p)=>s+p.amount, 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
+                                                    const paid = (bill.payments || []).reduce((s,p)=>s+(Number(p.amount)||0), 0); const bal = (Number(bill.amount) || 0) - paid; const isExp = showBillLedgerId === bill.id;
                                                     const catInfo = BILL_CATEGORIES.find(c => c.id === bill.category);
                                                     return (<Fragment key={bill.id}>
                                                         {isExp ? (
@@ -1106,6 +1124,129 @@
                                                         )}
                                                     </Fragment>);
                                                 })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'history' && (
+                            <div className="max-w-[1800px] mx-auto p-2 animate-in fade-in duration-300 font-black">
+                                <div className="bg-white p-2 px-4 rounded-2xl border border-slate-300 shadow-sm flex flex-wrap items-center justify-between gap-3 mb-2 font-black">
+                                    <h2 className="text-[18px] uppercase text-indigo-700 flex items-center gap-2"><Icon name="Users" size={18}/> {t('GUESTS')}</h2>
+                                    <div className="relative flex-1 max-w-xs"><Icon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/><input className="w-full bg-slate-100 border-none rounded-xl pl-10 pr-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 font-black font-condensed text-[18px]" placeholder={t('SEARCH')} value={historySearch} onChange={e=>setHistorySearch(e.target.value)} /></div>
+                                </div>
+                                <div className="card-standard">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left table-fixed">
+                                            <thead>
+                                                <tr>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[25%]" onClick={() => handleSort('guestName')}>{t('GUEST')} {getSortIcon('guestName')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[20%]" onClick={() => handleSort('property')}>{t('PROPERTY')} {getSortIcon('property')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('room')}>{t('UNIT')} {getSortIcon('room')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('start')}>{t('START')} {getSortIcon('start')}</th>
+                                                    <th className="th-custom hover:bg-slate-100 cursor-pointer w-[15%]" onClick={() => handleSort('end')}>{t('END')} {getSortIcon('end')}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y text-[15px]">
+                                                {allGuestsSorted.map(b => (
+                                                    <tr key={b.id} onClick={() => { setEditingId(b.id); setFormData({...b}); setShowModal(true); }} className="hover:bg-slate-50 font-black cursor-pointer uppercase">
+                                                        <td className="td-custom truncate">{getFirstName(b.guestName)}</td>
+                                                        <td className="td-custom opacity-70 truncate">{b.property || 'N/A'}</td>
+                                                        <td className="td-custom text-indigo-600 truncate">{b.room}</td>
+                                                        <td className="td-custom opacity-70 truncate">{b.start}</td>
+                                                        <td className="td-custom opacity-70 truncate">{b.end}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'accounting' && (
+                            <div className="p-2 max-w-[1800px] mx-auto space-y-4 animate-in fade-in duration-500 font-black">
+                                <div className="space-y-3">
+                                    <div className="bg-slate-200/50 p-3 rounded-3xl border border-slate-200">
+                                        <h3 className="text-[14px] uppercase text-slate-500 font-black tracking-widest px-2 mb-2">{t('CUMULATIVE')}</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.income.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.expense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                                                <p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p>
+                                                <div className="flex flex-col justify-end h-full pt-1">
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('IN')}:</span> <span className="text-emerald-500">฿{accountingData.totalPendingIn.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('OUT')}:</span> <span className="text-rose-500">฿{accountingData.totalPendingOut.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.net.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-indigo-50/70 p-3 rounded-3xl border border-indigo-100">
+                                        <h3 className="text-[14px] uppercase text-indigo-500 font-black tracking-widest px-2 mb-2">{t('THIS_MONTH')}</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('INCOME')}</p><h2 className="text-[20px] text-emerald-600">฿{accountingData.currentMonthIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"><p className="badge-label !ml-0 !mb-0 text-[13px]">{t('EXPENSE')}</p><h2 className="text-[20px] text-rose-600">฿{accountingData.currentMonthExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                                                <p className="badge-label !ml-0 !mb-0 text-[13px]">{t('PENDING')}</p>
+                                                <div className="flex flex-col justify-end h-full pt-1">
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('IN')}:</span> <span className="text-emerald-500">฿{accountingData.currentMonthPendingIn.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                    <div className="flex items-center justify-between text-[15px] font-black"><span className="text-slate-400">{t('OUT')}:</span> <span className="text-rose-500">฿{accountingData.currentMonthPendingOut.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-indigo-700 p-3 rounded-2xl text-white shadow-md flex flex-col justify-between"><p className="text-[12px] text-indigo-300 uppercase tracking-tighter">{t('NET')}</p><h2 className="text-[20px]">฿{accountingData.currentMonthNet.toLocaleString(undefined, {minimumFractionDigits: 2})}</h2></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="card-standard">
+                                    <div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">
+                                        <span>{t('LEDGER')} {t('CURR_MONTH')}</span>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead><tr><th className="th-custom">{t('DATE')}</th><th className="th-custom">{t('REF')}</th><th className="th-custom text-right">{t('AMOUNT')}</th></tr></thead>
+                                            <tbody className="divide-y text-[15px]">
+                                                {accountingData.currentMonthLedger.length === 0 ? (
+                                                    <tr><td colSpan="3" className="p-4 text-center text-slate-400">No transactions this month</td></tr>
+                                                ) : (
+                                                    accountingData.currentMonthLedger.map((item, idx) => renderTransaction(item, idx))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div className="card-standard">
+                                    <div className="bg-slate-50 px-4 py-2 border-b font-black uppercase text-indigo-700">{t('HISTORY')}</div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead><tr><th className="th-custom">{t('MONTH')}</th><th className="th-custom">{t('INCOME')}</th><th className="th-custom">{t('EXPENSE')}</th><th className="th-custom text-right">{t('NET')}</th></tr></thead>
+                                            <tbody className="divide-y text-[15px]">
+                                                {accountingData.history.map((h, i) => (
+                                                    <Fragment key={i}>
+                                                        <tr onClick={() => setExpandedHistoryMonth(expandedHistoryMonth === `${h.m}_${h.y}` ? null : `${h.m}_${h.y}`)} className={`hover:bg-indigo-50 cursor-pointer font-black uppercase transition-colors ${expandedHistoryMonth === `${h.m}_${h.y}` ? 'bg-indigo-50/50' : ''}`}>
+                                                            <td className="td-custom flex items-center gap-2">
+                                                                <Icon name={expandedHistoryMonth === `${h.m}_${h.y}` ? "ChevronDown" : "ChevronRight"} size={16} className="text-indigo-400" />
+                                                                {h.label}
+                                                            </td>
+                                                            <td className="td-custom text-emerald-600">฿{h.inc.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                                            <td className="td-custom text-rose-600">฿{h.exp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                                            <td className={`td-custom text-right ${h.inc-h.exp>=0?'text-emerald-700':'text-rose-700'}`}>฿{(h.inc-h.exp).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                                        </tr>
+                                                        {expandedHistoryMonth === `${h.m}_${h.y}` && (
+                                                            <tr>
+                                                                <td colSpan="4" className="p-0 border-b bg-slate-50 shadow-inner">
+                                                                    <table className="w-full text-left">
+                                                                        <tbody className="divide-y text-[14px]">
+                                                                            {h.transactions.map((item, idx) => renderTransaction(item, idx))}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </Fragment>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
